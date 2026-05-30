@@ -6,13 +6,15 @@ doas pkg_add \
     git \
     curl \
     zsh \
-    neofetch \
+    htop \
+    fastfetch \
     alacritty \
     i3 \
     i3status \
     dmenu \
     rofi \
     feh \
+    firefox \
     xscreensaver \
     i3lock \
     dina-fonts \
