@@ -1,8 +1,9 @@
+cat > ~/bootstrap-i3.sh << 'EOF'
 #!/bin/sh
 set -e
 
 echo "==> installing packages..."
-doas pkg_add rofi feh xscreensaver
+doas pkg_add rofi feh xscreensaver i3lock
 
 echo "==> creating directories..."
 mkdir -p ~/.config/i3
@@ -11,7 +12,7 @@ echo "==> writing i3 config..."
 cat > ~/.config/i3/config << 'I3CONF'
 set $mod Mod1
 
-font pango:monospace 15
+font pango:monospace 10
 
 default_border pixel 0
 default_floating_border pixel 0
@@ -22,7 +23,7 @@ tiling_drag modifier titlebar
 bindsym $mod+Return exec xterm
 bindsym $mod+Shift+q kill
 bindcode $mod+40 exec --no-startup-id "rofi -modi drun -show drun"
-bindsym $mod+l exec xscreensaver-command -activate
+bindsym $mod+l exec i3lock -i ~/.config/i3/background.png
 
 bindsym $mod+Left focus left
 bindsym $mod+Down focus down
@@ -102,6 +103,7 @@ bindsym $mod+r mode "resize"
 bindsym XF86AudioRaiseVolume exec mixerctl -n outputs.master | awk -F, '{print ($1+5)","($2+5)}' | xargs -I{} mixerctl outputs.master={}
 bindsym XF86AudioLowerVolume exec mixerctl -n outputs.master | awk -F, '{print ($1-5)","($2-5)}' | xargs -I{} mixerctl outputs.master={}
 
+exec --no-startup-id xscreensaver -no-splash &
 exec --no-startup-id feh --bg-fill ~/.config/i3/background.png
 
 bar {
@@ -178,9 +180,24 @@ tztime local {
 }
 STATUSCONF
 
+echo "==> copying xscreensaver config..."
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+if [ -f "$SCRIPT_DIR/.xscreensaver" ]; then
+    cp "$SCRIPT_DIR/.xscreensaver" ~/.xscreensaver
+    echo "    .xscreensaver copied"
+else
+    echo "    WARNING: .xscreensaver not found next to script, skipping"
+fi
+
 echo "==> updating .xsession..."
-echo "exec i3" > ~/.xsession
+cat > ~/.xsession << 'XSESSION'
+xscreensaver -no-splash &
+exec i3
+XSESSION
 
 echo "==> done"
 echo "    put your wallpaper at ~/.config/i3/background.png"
 echo "    then logout and login to start i3"
+EOF
+
+chmod +x ~/bootstrap-i3.sh
