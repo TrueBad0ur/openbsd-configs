@@ -1,7 +1,7 @@
 REPO != pwd
 AWG_BUILD_DIR ?= $(HOME)/repos
 
-.PHONY: all packages os link system zsh xenodm firefox clean awg awg-script
+.PHONY: all packages os link system zsh xenodm firefox clean awg awg-script claude
 
 all: packages os zsh link system xenodm
 
@@ -15,7 +15,8 @@ packages:
 		dina-fonts \
 		coreutils \
 		scrot \
-		xclip
+		xclip \
+		node
 
 os:
 	echo "thinkpad" | doas tee /etc/myname
@@ -69,6 +70,9 @@ awg:
 awg-script:
 	doas ln -sf $(REPO)/scripts/awg-openbsd.sh /usr/local/bin/awg-openbsd
 	doas chmod +x /usr/local/bin/awg-openbsd
+
+claude:
+	doas npm install -g @anthropic-ai/claude-code@2.1.112 --ignore-scripts
 
 firefox:
 	@profile=$$(ls -d $(HOME)/.mozilla/firefox/*.default-release 2>/dev/null | head -1); \
