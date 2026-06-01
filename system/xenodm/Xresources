@@ -1,11 +1,3 @@
-#!/bin/sh
-set -e
-
-echo "==> installing fonts..."
-pkg_add dina-fonts
-
-echo "==> configuring Xresources..."
-cat > /etc/X11/xenodm/Xresources << 'XRES'
 xlogin.Login.echoPasswd:        true
 xlogin.Login.fail:              ya dun goofed
 xlogin.Login.greeting:
@@ -27,17 +19,3 @@ xlogin.Login.shdColor:          #000000
 xlogin.Login.face:              Dina-11
 xlogin.Login.failFace:          Dina-11
 xlogin.Login.promptFace:        Dina-11
-XRES
-
-echo "==> configuring Xsetup_0..."
-cat > /etc/X11/xenodm/Xsetup_0 << 'XSETUP'
-#!/bin/sh
-/usr/X11R6/bin/xsetroot -solid \#000000
-/usr/X11R6/bin/xset fp+ /usr/local/share/font/dina
-XSETUP
-chmod +x /etc/X11/xenodm/Xsetup_0
-
-echo "==> restarting xenodm..."
-rcctl restart xenodm
-
-echo "==> done"

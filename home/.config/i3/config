@@ -1,15 +1,3 @@
-cat > ~/bootstrap-i3.sh << 'EOF'
-#!/bin/sh
-set -e
-
-echo "==> installing packages..."
-doas pkg_add rofi feh xscreensaver i3lock
-
-echo "==> creating directories..."
-mkdir -p ~/.config/i3
-
-echo "==> writing i3 config..."
-cat > ~/.config/i3/config << 'I3CONF'
 set $mod Mod1
 
 font pango:monospace 10
@@ -20,7 +8,7 @@ default_floating_border pixel 0
 floating_modifier $mod
 tiling_drag modifier titlebar
 
-bindsym $mod+Return exec xterm
+bindsym $mod+Return exec alacritty
 bindsym $mod+Shift+q kill
 bindcode $mod+40 exec --no-startup-id "rofi -modi drun -show drun"
 bindsym $mod+l exec i3lock -i ~/.config/i3/background.png
@@ -123,92 +111,3 @@ bar {
         urgent_workspace    #2F343A #e65c00 #FFFFFF
     }
 }
-I3CONF
-
-echo "==> writing i3status config..."
-cat > ~/.config/i3/i3status.conf << 'STATUSCONF'
-general {
-    colors = true
-    interval = 5
-    output_format = "i3bar"
-}
-
-order += "cpu_usage"
-order += "disk /"
-order += "wireless _first_"
-order += "ethernet _first_"
-order += "battery 0"
-order += "memory"
-order += "tztime local"
-
-cpu_usage {
-    format = "CPU %usage"
-    max_threshold = 30
-}
-
-wireless _first_ {
-    format_up = "WiFi %quality %essid %ip"
-    format_down = ""
-}
-
-ethernet _first_ {
-    format_up = "ETH %ip"
-    format_down = ""
-}
-
-battery 0 {
-    format = "%status %percentage %remaining"
-    format_down = ""
-    status_chr = "CHR"
-    status_bat = "BAT"
-    status_full = "FULL"
-    path = "/sys/class/power_supply/BAT%d/uevent"
-    low_threshold = 10
-}
-
-memory {
-    format = "RAM %used"
-    threshold_degraded = "25%"
-}
-
-disk "/" {
-    format = "DISK %avail"
-}
-
-tztime local {
-    format = "%Y-%m-%d %H:%M"
-}
-STATUSCONF
-
-echo "==> copying xscreensaver config..."
-SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-if [ -f "$SCRIPT_DIR/.xscreensaver" ]; then
-    cp "$SCRIPT_DIR/.xscreensaver" ~/.xscreensaver
-    echo "    .xscreensaver copied"
-else
-    echo "    WARNING: .xscreensaver not found next to script, skipping"
-fi
-
-echo "==> updating .xsession..."
-cat > ~/.xsession << 'XSESSION'
-xscreensaver -no-splash &
-
-while true; do
-    total=$(/sbin/sysctl -n hw.physmem | /usr/bin/awk '{printf "%d", $1/1024/1024}')
-    used=$(/usr/bin/vmstat | /usr/bin/awk 'NR==3{gsub("M","",$3); print int($3)}')
-    echo "$(date): used=$used total=$total" >> /tmp/ram.log
-    if [ -n "$used" ] && [ -n "$total" ]; then
-        echo "RAM ${used}MB / ${total}MB" > /tmp/ram
-    fi
-    sleep 5
-done &
-
-exec i3
-XSESSION
-
-echo "==> done"
-echo "    put your wallpaper at ~/.config/i3/background.png"
-echo "    then logout and login to start i3"
-EOF
-
-chmod +x ~/bootstrap-i3.sh

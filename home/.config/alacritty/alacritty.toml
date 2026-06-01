@@ -1,12 +1,3 @@
-#!/bin/sh
-set -e
-
-echo "==> installing alacritty..."
-doas pkg_add alacritty
-
-echo "==> writing alacritty config..."
-mkdir -p ~/.config/alacritty
-cat > ~/.config/alacritty/alacritty.toml << 'CONF'
 [window]
 padding.x = 10
 padding.y = 10
@@ -42,10 +33,3 @@ blue =    "#61afef"
 magenta = "#c678dd"
 cyan =    "#56b6c2"
 white =   "#ffffff"
-CONF
-
-echo "==> updating i3 config..."
-sed -i 's/exec xterm/exec alacritty/' ~/.config/i3/config
-
-echo "==> done"
-echo "    Mod+Shift+R to reload i3"

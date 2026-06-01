@@ -1,5 +1,3 @@
-mkdir -p ~/.mozilla/firefox/*.default-release
-cat > ~/.mozilla/firefox/*.default-release/user.js << 'EOF'
 // Telemetry off
 user_pref("datareporting.healthreport.uploadEnabled", false);
 user_pref("datareporting.policy.dataSubmissionEnabled", false);
@@ -20,4 +18,3 @@ user_pref("browser.sessionstore.interval", 60000);
 // No sponsored content
 user_pref("browser.newtabpage.activity-stream.showSponsored", false);
 user_pref("browser.newtabpage.activity-stream.showSponsoredTopSites", false);
-EOF
