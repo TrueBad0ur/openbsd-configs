@@ -22,6 +22,7 @@ link:
 	mkdir -p $(HOME)/.config/i3 $(HOME)/.config/alacritty
 	ln -sf $(REPO)/home/.zshrc              $(HOME)/.zshrc
 	ln -sf $(REPO)/home/.xsession           $(HOME)/.xsession
+	chmod +x $(REPO)/home/.xsession
 	ln -sf $(REPO)/home/.xscreensaver       $(HOME)/.xscreensaver
 	ln -sf $(REPO)/home/.config/i3/config          $(HOME)/.config/i3/config
 	ln -sf $(REPO)/home/.config/i3/i3status.conf   $(HOME)/.config/i3/i3status.conf
