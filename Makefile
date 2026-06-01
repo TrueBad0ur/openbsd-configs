@@ -33,9 +33,9 @@ link:
 	ln -sf $(REPO)/home/.config/alacritty/alacritty.toml $(HOME)/.config/alacritty/alacritty.toml
 
 system:
-	doas cp system/xenodm/Xresources /etc/X11/xenodm/Xresources
-	doas cp system/xenodm/Xsetup_0   /etc/X11/xenodm/Xsetup_0
-	doas chmod +x /etc/X11/xenodm/Xsetup_0
+	doas ln -sf $(REPO)/system/xenodm/Xresources /etc/X11/xenodm/Xresources
+	doas ln -sf $(REPO)/system/xenodm/Xsetup_0   /etc/X11/xenodm/Xsetup_0
+	doas chmod +x $(REPO)/system/xenodm/Xsetup_0
 
 xenodm: system
 	doas rcctl restart xenodm
