@@ -62,6 +62,7 @@ awg:
 	[ -d $(AWG_BUILD_DIR)/amneziawg-tools ] || \
 		git clone https://github.com/TrueBad0ur/amneziawg-tools $(AWG_BUILD_DIR)/amneziawg-tools
 	cd $(AWG_BUILD_DIR)/amneziawg-tools/src && gmake && doas gmake install
+	doas chmod 755 /etc/amnezia /etc/amnezia/amneziawg
 
 awg-script:
 	doas ln -sf $(REPO)/scripts/awg-openbsd.sh /usr/local/bin/awg-openbsd
