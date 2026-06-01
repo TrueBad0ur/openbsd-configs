@@ -10,7 +10,7 @@ packages:
 		alacritty \
 		i3 i3status dmenu rofi feh \
 		firefox \
-		xscreensaver i3lock \
+		xscreensaver \
 		dina-fonts \
 		coreutils
 
