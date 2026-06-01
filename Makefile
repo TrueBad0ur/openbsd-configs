@@ -1,7 +1,7 @@
 REPO != pwd
 AWG_BUILD_DIR ?= $(HOME)/repos
 
-.PHONY: all packages os system zsh xenodm firefox clean awg awg-script claude \
+.PHONY: all packages os system zsh xenodm firefox clean awg awg-script claude website \
         link link-rice link-minimal rice
 
 # default: minimal (no picom/polybar)
@@ -118,6 +118,19 @@ awg-script:
 
 claude:
 	doas npm install -g @anthropic-ai/claude-code@2.1.112 --ignore-scripts
+
+website:
+	doas mkdir -p /var/www/htdocs /var/www/acme
+	doas cp website/acme-client.conf /etc/acme-client.conf
+	doas cp website/index.html       /var/www/htdocs/index.html
+	doas cp website/httpd-bootstrap.conf /etc/httpd.conf
+	doas rcctl enable httpd
+	doas rcctl restart httpd
+	doas acme-client -v openbsd-kiku
+	doas cp website/httpd.conf /etc/httpd.conf
+	doas rcctl restart httpd
+	doas crontab -l 2>/dev/null | grep -qF 'acme-client openbsd-kiku' || \
+		(doas crontab -l 2>/dev/null; echo "0 0 * * * acme-client openbsd-kiku && rcctl reload httpd") | doas crontab -
 
 firefox:
 	@profile=$$(ls -d $(HOME)/.mozilla/firefox/*.default-release 2>/dev/null | head -1); \
