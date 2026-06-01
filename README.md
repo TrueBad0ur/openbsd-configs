@@ -1,3 +1,7 @@
+<div align="center">
+  <img src="./assets/openbsd.png" alt="description" width="250">
+</div>
+
 # openbsd-configs
 
 OpenBSD dotfiles for ThinkPad. i3 WM, zsh, alacritty.
