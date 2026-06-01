@@ -57,6 +57,7 @@ parse_conf() {
 }
 
 prepare_conf() {
+    rm -f "$AWG_CONF"
     python3 -c "
 skip = {'address','dns','mtu','table','preup','postup','predown','postdown','saveconfig'}
 with open('$CONF') as f:
