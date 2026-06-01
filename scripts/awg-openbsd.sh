@@ -128,9 +128,9 @@ cmd_start() {
     ifconfig $INTERFACE up
 
     echo "==> adding routes..."
-    route add -host $SERVER_IP -gateway $GW
-    route add -inet 0.0.0.0/1 $PEER_IP
-    route add -inet 128.0.0.0/1 $PEER_IP
+    route -q add -host $SERVER_IP -gateway $GW
+    route -q add -inet 0.0.0.0/1 $PEER_IP
+    route -q add -inet 128.0.0.0/1 $PEER_IP
 
     echo "==> waiting for handshake..."
     wait_for_handshake
@@ -141,14 +141,14 @@ cmd_start() {
 cmd_stop() {
     parse_conf 2>/dev/null || true
 
+    echo "==> removing routes..."
+    route -q delete -host $SERVER_IP 2>/dev/null || true
+    route -q delete -inet 0.0.0.0/1 2>/dev/null || true
+    route -q delete -inet 128.0.0.0/1 2>/dev/null || true
+
     echo "==> stopping amneziawg-go..."
     kill $(pgrep amneziawg-go) 2>/dev/null || true
     sleep 1
-
-    echo "==> removing routes..."
-    route delete -host $SERVER_IP 2>/dev/null || true
-    route delete -inet 0.0.0.0/1 2>/dev/null || true
-    route delete -inet 128.0.0.0/1 2>/dev/null || true
 
     echo "==> destroying tun interfaces..."
     for i in $(ifconfig | grep "^tun" | cut -d: -f1); do
