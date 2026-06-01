@@ -1,5 +1,4 @@
-REPO := $(shell pwd)
-HOME := $(HOME)
+REPO != pwd
 
 .PHONY: all packages os link system zsh xenodm firefox
 
