@@ -1,6 +1,7 @@
 REPO != pwd
+AWG_BUILD_DIR ?= $(HOME)/repos
 
-.PHONY: all packages os link system zsh xenodm firefox clean
+.PHONY: all packages os link system zsh xenodm firefox clean awg awg-script
 
 all: packages os link zsh system xenodm
 
@@ -52,6 +53,19 @@ clean:
 	rm -f $(HOME)/.config/i3/config $(HOME)/.config/i3/i3status.conf
 	rm -f $(HOME)/.config/alacritty/alacritty.toml
 	rm -rf $(HOME)/.oh-my-zsh
+
+awg:
+	doas pkg_add go gmake wireguard-tools
+	[ -d $(AWG_BUILD_DIR)/amneziawg-go ] || \
+		git clone https://github.com/TrueBad0ur/amneziawg-go $(AWG_BUILD_DIR)/amneziawg-go
+	cd $(AWG_BUILD_DIR)/amneziawg-go && gmake && doas gmake install
+	[ -d $(AWG_BUILD_DIR)/amneziawg-tools ] || \
+		git clone https://github.com/TrueBad0ur/amneziawg-tools $(AWG_BUILD_DIR)/amneziawg-tools
+	cd $(AWG_BUILD_DIR)/amneziawg-tools/src && gmake && doas gmake install
+
+awg-script:
+	doas ln -sf $(REPO)/scripts/awg-openbsd.sh /usr/local/bin/awg-openbsd
+	doas chmod +x /usr/local/bin/awg-openbsd
 
 firefox:
 	@profile=$$(ls -d $(HOME)/.mozilla/firefox/*.default-release 2>/dev/null | head -1); \
