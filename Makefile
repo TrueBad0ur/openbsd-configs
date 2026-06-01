@@ -1,6 +1,6 @@
 REPO != pwd
 
-.PHONY: all packages os link system zsh xenodm firefox
+.PHONY: all packages os link system zsh xenodm firefox clean
 
 all: packages os link zsh system xenodm
 
@@ -46,6 +46,12 @@ zsh:
 		echo '/usr/local/bin/zsh' | doas tee -a /etc/shells
 	[ "$$(grep "^$$(whoami):" /etc/passwd | cut -d: -f7)" = "/usr/local/bin/zsh" ] || \
 		chsh -s /usr/local/bin/zsh
+
+clean:
+	rm -f $(HOME)/.zshrc $(HOME)/.xsession $(HOME)/.xscreensaver
+	rm -f $(HOME)/.config/i3/config $(HOME)/.config/i3/i3status.conf
+	rm -f $(HOME)/.config/alacritty/alacritty.toml
+	rm -rf $(HOME)/.oh-my-zsh
 
 firefox:
 	@profile=$$(ls -d $(HOME)/.mozilla/firefox/*.default-release 2>/dev/null | head -1); \
