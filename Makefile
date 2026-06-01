@@ -33,8 +33,6 @@ system:
 	doas cp system/xenodm/Xresources /etc/X11/xenodm/Xresources
 	doas cp system/xenodm/Xsetup_0   /etc/X11/xenodm/Xsetup_0
 	doas chmod +x /etc/X11/xenodm/Xsetup_0
-	doas mkdir -p /etc/X11/xorg.conf.d
-	doas cp system/xorg.conf.d/20-trackpoint.conf /etc/X11/xorg.conf.d/20-trackpoint.conf
 
 xenodm: system
 	doas rcctl restart xenodm
