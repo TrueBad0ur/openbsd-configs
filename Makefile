@@ -1,9 +1,11 @@
 REPO != pwd
 AWG_BUILD_DIR ?= $(HOME)/repos
 
-.PHONY: all packages os link system zsh xenodm firefox clean awg awg-script claude
+.PHONY: all packages os system zsh xenodm firefox clean awg awg-script claude \
+        link link-rice link-minimal rice
 
-all: packages os zsh link system
+# default: minimal (no picom/polybar)
+all: packages os zsh link-minimal system
 
 packages:
 	doas pkg_add \
@@ -18,19 +20,54 @@ packages:
 		xclip \
 		node
 
+# --- Profiles ---
+
+link: link-minimal
+
+link-minimal:
+	@echo "==> profile: minimal"
+	mkdir -p $(HOME)/.config/i3 $(HOME)/.config/alacritty $(HOME)/.config/rofi
+	ln -sf $(REPO)/home/.zshrc                              $(HOME)/.zshrc
+	ln -sf $(REPO)/home/.xsession                           $(HOME)/.xsession
+	chmod +x $(REPO)/home/.xsession
+	ln -sf $(REPO)/home/.xscreensaver                       $(HOME)/.xscreensaver
+	ln -sf $(REPO)/home/.config/i3/config.minimal           $(HOME)/.config/i3/config
+	ln -sf $(REPO)/home/.config/i3/i3status.conf            $(HOME)/.config/i3/i3status.conf
+	ln -sf $(REPO)/home/.config/alacritty/alacritty.toml    $(HOME)/.config/alacritty/alacritty.toml
+	rm -f $(HOME)/.config/rofi/config.rasi
+	pkill -x polybar 2>/dev/null || true
+	pkill -x picom   2>/dev/null || true
+	pkill -x dunst   2>/dev/null || true
+	@echo "==> done. restart i3: Mod+Shift+r"
+
+link-rice:
+	@echo "==> profile: rice (picom + polybar + dunst)"
+	doas pkg_add picom polybar dunst 2>/dev/null || true
+	mkdir -p $(HOME)/.config/i3 $(HOME)/.config/alacritty \
+		$(HOME)/.config/picom $(HOME)/.config/polybar \
+		$(HOME)/.config/dunst $(HOME)/.config/rofi
+	ln -sf $(REPO)/home/.zshrc                              $(HOME)/.zshrc
+	ln -sf $(REPO)/home/.xsession                           $(HOME)/.xsession
+	chmod +x $(REPO)/home/.xsession
+	ln -sf $(REPO)/home/.xscreensaver                       $(HOME)/.xscreensaver
+	ln -sf $(REPO)/home/.config/i3/config                   $(HOME)/.config/i3/config
+	ln -sf $(REPO)/home/.config/i3/i3status.conf            $(HOME)/.config/i3/i3status.conf
+	ln -sf $(REPO)/home/.config/alacritty/alacritty.toml    $(HOME)/.config/alacritty/alacritty.toml
+	ln -sf $(REPO)/home/.config/picom/picom.conf            $(HOME)/.config/picom/picom.conf
+	ln -sf $(REPO)/home/.config/polybar/config.ini          $(HOME)/.config/polybar/config.ini
+	ln -sf $(REPO)/home/.config/polybar/launch.sh           $(HOME)/.config/polybar/launch.sh
+	chmod +x $(REPO)/home/.config/polybar/launch.sh
+	ln -sf $(REPO)/home/.config/dunst/dunstrc               $(HOME)/.config/dunst/dunstrc
+	ln -sf $(REPO)/home/.config/rofi/config.rasi            $(HOME)/.config/rofi/config.rasi
+	@echo "==> done. restart i3: Mod+Shift+r"
+
+rice: link-rice
+
+# --- System ---
+
 os:
 	echo "thinkpad" | doas tee /etc/myname
 	doas ln -fs /usr/share/zoneinfo/Europe/Moscow /etc/localtime
-
-link:
-	mkdir -p $(HOME)/.config/i3 $(HOME)/.config/alacritty
-	ln -sf $(REPO)/home/.zshrc              $(HOME)/.zshrc
-	ln -sf $(REPO)/home/.xsession           $(HOME)/.xsession
-	chmod +x $(REPO)/home/.xsession
-	ln -sf $(REPO)/home/.xscreensaver       $(HOME)/.xscreensaver
-	ln -sf $(REPO)/home/.config/i3/config          $(HOME)/.config/i3/config
-	ln -sf $(REPO)/home/.config/i3/i3status.conf   $(HOME)/.config/i3/i3status.conf
-	ln -sf $(REPO)/home/.config/alacritty/alacritty.toml $(HOME)/.config/alacritty/alacritty.toml
 
 system:
 	doas ln -sf $(REPO)/system/xenodm/Xresources /etc/X11/xenodm/Xresources
@@ -55,7 +92,13 @@ clean:
 	rm -f $(HOME)/.zshrc $(HOME)/.xsession $(HOME)/.xscreensaver
 	rm -f $(HOME)/.config/i3/config $(HOME)/.config/i3/i3status.conf
 	rm -f $(HOME)/.config/alacritty/alacritty.toml
+	rm -f $(HOME)/.config/picom/picom.conf
+	rm -f $(HOME)/.config/polybar/config.ini $(HOME)/.config/polybar/launch.sh
+	rm -f $(HOME)/.config/dunst/dunstrc
+	rm -f $(HOME)/.config/rofi/config.rasi
 	rm -rf $(HOME)/.oh-my-zsh
+
+# --- VPN ---
 
 awg:
 	doas pkg_add go gmake wireguard-tools
@@ -70,6 +113,8 @@ awg:
 awg-script:
 	doas ln -sf $(REPO)/scripts/awg-openbsd.sh /usr/local/bin/awg-openbsd
 	doas chmod +x /usr/local/bin/awg-openbsd
+
+# --- Misc ---
 
 claude:
 	doas npm install -g @anthropic-ai/claude-code@2.1.112 --ignore-scripts

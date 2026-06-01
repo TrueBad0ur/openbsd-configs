@@ -1,0 +1,92 @@
+configuration {
+    modi: "drun,run";
+    show-icons: true;
+    icon-theme: "Adwaita";
+    font: "monospace 11";
+    display-drun: "apps";
+    display-run: "run";
+    drun-display-format: "{name}";
+}
+
+* {
+    base:     #1e1e2e;
+    mantle:   #181825;
+    surface0: #313244;
+    surface1: #45475a;
+    overlay0: #6c7086;
+    text:     #cdd6f4;
+    lavender: #b4befe;
+    blue:     #89b4fa;
+    mauve:    #cba6f7;
+    red:      #f38ba8;
+
+    background-color: transparent;
+    text-color:       @text;
+}
+
+window {
+    background-color: @base;
+    border:           2px solid;
+    border-color:     @blue;
+    border-radius:    12px;
+    width:            480px;
+    padding:          12px;
+}
+
+mainbox {
+    background-color: transparent;
+    children: [inputbar, listview];
+    spacing: 8px;
+}
+
+inputbar {
+    background-color: @surface0;
+    border-radius:    8px;
+    padding:          8px 12px;
+    children:        [prompt, entry];
+    spacing:          6px;
+}
+
+prompt {
+    background-color: transparent;
+    text-color:       @blue;
+}
+
+entry {
+    background-color: transparent;
+    text-color:       @text;
+    cursor:           text;
+    placeholder:      "search...";
+    placeholder-color: @overlay0;
+}
+
+listview {
+    background-color: transparent;
+    lines:            8;
+    columns:          1;
+    spacing:          4px;
+    scrollbar:        false;
+}
+
+element {
+    background-color: transparent;
+    border-radius:    6px;
+    padding:          6px 10px;
+    spacing:          8px;
+    children:        [element-icon, element-text];
+}
+
+element selected {
+    background-color: @surface0;
+    text-color:       @blue;
+}
+
+element-icon {
+    size: 20px;
+}
+
+element-text {
+    background-color: transparent;
+    text-color:       inherit;
+    vertical-align:   0.5;
+}

@@ -1,6 +1,6 @@
 [window]
-padding.x = 10
-padding.y = 10
+padding.x = 12
+padding.y = 12
 opacity = 0.95
 
 [font]
@@ -10,26 +10,63 @@ size = 13.0
 family = "DejaVu Sans Mono"
 style = "Regular"
 
+[font.bold]
+family = "DejaVu Sans Mono"
+style = "Bold"
+
+[font.italic]
+family = "DejaVu Sans Mono"
+style = "Oblique"
+
+# Catppuccin Mocha
 [colors.primary]
-background = "#1a1a2e"
-foreground = "#e0e0e0"
+background = "#1e1e2e"
+foreground = "#cdd6f4"
+dim_foreground = "#7f849c"
+bright_foreground = "#cdd6f4"
+
+[colors.cursor]
+text   = "#1e1e2e"
+cursor = "#f5e0dc"
+
+[colors.vi_mode_cursor]
+text   = "#1e1e2e"
+cursor = "#b4befe"
+
+[colors.search.matches]
+foreground = "#1e1e2e"
+background = "#a6adc8"
+
+[colors.search.focused_match]
+foreground = "#1e1e2e"
+background = "#a6e3a1"
 
 [colors.normal]
-black =   "#1a1a2e"
-red =     "#e06c75"
-green =   "#98c379"
-yellow =  "#e5c07b"
-blue =    "#61afef"
-magenta = "#c678dd"
-cyan =    "#56b6c2"
-white =   "#abb2bf"
+black   = "#45475a"
+red     = "#f38ba8"
+green   = "#a6e3a1"
+yellow  = "#f9e2af"
+blue    = "#89b4fa"
+magenta = "#f5c2e7"
+cyan    = "#94e2d5"
+white   = "#bac2de"
 
 [colors.bright]
-black =   "#5c6370"
-red =     "#e06c75"
-green =   "#98c379"
-yellow =  "#e5c07b"
-blue =    "#61afef"
-magenta = "#c678dd"
-cyan =    "#56b6c2"
-white =   "#ffffff"
+black   = "#585b70"
+red     = "#f38ba8"
+green   = "#a6e3a1"
+yellow  = "#f9e2af"
+blue    = "#89b4fa"
+magenta = "#f5c2e7"
+cyan    = "#94e2d5"
+white   = "#a6adc8"
+
+[colors.dim]
+black   = "#45475a"
+red     = "#f38ba8"
+green   = "#a6e3a1"
+yellow  = "#f9e2af"
+blue    = "#89b4fa"
+magenta = "#f5c2e7"
+cyan    = "#94e2d5"
+white   = "#bac2de"

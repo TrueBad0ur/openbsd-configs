@@ -2,48 +2,15 @@ set $mod Mod1
 
 font pango:monospace 10
 
-# --- Catppuccin Mocha ---
-set $base     #1e1e2e
-set $mantle   #181825
-set $surface0 #313244
-set $surface1 #45475a
-set $overlay0 #6c7086
-set $text     #cdd6f4
-set $lavender #b4befe
-set $blue     #89b4fa
-set $mauve    #cba6f7
-set $red      #f38ba8
-set $green    #a6e3a1
-set $yellow   #f9e2af
-set $peach    #fab387
+default_border pixel 0
+default_floating_border pixel 0
 
-# --- Gaps ---
-gaps inner 10
-gaps outer 4
-smart_gaps on
-smart_borders on
-
-# --- Borders ---
-default_border pixel 2
-default_floating_border pixel 2
-
-# class                 border    bg        text      indicator child_border
-client.focused          $blue     $base     $text     $blue     $blue
-client.focused_inactive $surface0 $base     $overlay0 $surface0 $surface0
-client.unfocused        $surface0 $base     $overlay0 $surface0 $surface0
-client.urgent           $red      $base     $text     $red      $red
-
-# --- Autostart ---
-exec --no-startup-id picom --config ~/.config/picom/picom.conf -b
-exec --no-startup-id dunst
-exec --no-startup-id feh --bg-fill ~/.config/i3/background.png
-exec --no-startup-id ~/.config/polybar/launch.sh
-
-# --- Input ---
 floating_modifier $mod
 tiling_drag modifier titlebar
 
-# --- Keybindings ---
+exec --no-startup-id xscreensaver -no-splash &
+exec --no-startup-id feh --bg-fill ~/.config/i3/background.png
+
 bindsym $mod+Return exec alacritty
 bindsym $mod+Shift+q kill
 bindcode $mod+40 exec --no-startup-id "rofi -modi drun -show drun"
@@ -77,7 +44,6 @@ bindsym $mod+Shift+space floating toggle
 bindsym $mod+space focus mode_toggle
 bindsym $mod+a focus parent
 
-# --- Workspaces ---
 set $ws1 "1"
 set $ws2 "2"
 set $ws3 "3"
@@ -115,7 +81,6 @@ bindsym $mod+Shift+c reload
 bindsym $mod+Shift+r restart
 bindsym $mod+Shift+e exec "i3-nagbar -t warning -m 'Exit i3?' -B 'Yes' 'i3-msg exit'"
 
-# --- Resize ---
 mode "resize" {
     bindsym Left  resize shrink width  10 px or 10 ppt
     bindsym Right resize grow   width  10 px or 10 ppt
@@ -127,6 +92,23 @@ mode "resize" {
 }
 bindsym $mod+r mode "resize"
 
-# --- Volume (OpenBSD mixerctl) ---
 bindsym XF86AudioRaiseVolume exec mixerctl -n outputs.master | awk -F, '{print ($1+5)","($2+5)}' | xargs -I{} mixerctl outputs.master={}
 bindsym XF86AudioLowerVolume exec mixerctl -n outputs.master | awk -F, '{print ($1-5)","($2-5)}' | xargs -I{} mixerctl outputs.master={}
+
+bar {
+    status_command i3status --config ~/.config/i3/i3status.conf
+    position top
+    separator_symbol "|"
+    workspace_buttons yes
+    strip_workspace_numbers yes
+
+    colors {
+        background  #212121
+        statusline  #DDDDDD
+        separator   #777777
+        focused_workspace   #777777 #2e004d #FFFFFF
+        active_workspace    #212121 #212121 #FFFFFF
+        inactive_workspace  #212121 #212121 #86888C
+        urgent_workspace    #2F343A #e65c00 #FFFFFF
+    }
+}
