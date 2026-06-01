@@ -1,3 +1,3 @@
 #!/bin/sh
 /usr/X11R6/bin/xsetroot -solid \#000000
-/usr/X11R6/bin/xset fp+ /usr/local/share/font/dina
+/usr/X11R6/bin/xset fp+ /usr/local/share/fonts/dina

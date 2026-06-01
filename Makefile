@@ -3,7 +3,7 @@ AWG_BUILD_DIR ?= $(HOME)/repos
 
 .PHONY: all packages os link system zsh xenodm firefox clean awg awg-script claude
 
-all: packages os zsh link system xenodm
+all: packages os zsh link system
 
 packages:
 	doas pkg_add \
