@@ -13,7 +13,9 @@ packages:
 		firefox \
 		xscreensaver \
 		dina-fonts \
-		coreutils
+		coreutils \
+		scrot \
+		xclip
 
 os:
 	echo "thinkpad" | doas tee /etc/myname

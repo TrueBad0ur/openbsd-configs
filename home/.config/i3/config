@@ -12,6 +12,7 @@ bindsym $mod+Return exec alacritty
 bindsym $mod+Shift+q kill
 bindcode $mod+40 exec --no-startup-id "rofi -modi drun -show drun"
 bindsym $mod+l exec xscreensaver-command -lock
+bindsym $mod+Shift+s exec scrot -s -e 'xclip -selection clipboard -t image/png -i $f && rm $f'
 
 bindsym $mod+Left focus left
 bindsym $mod+Down focus down
