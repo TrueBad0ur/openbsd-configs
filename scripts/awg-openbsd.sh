@@ -54,8 +54,16 @@ parse_conf() {
     SERVER_HOST=$(echo $ENDPOINT | sed 's/:.*//')
     SERVER_PORT=$(echo $ENDPOINT | sed 's/.*://')
 
-    SERVER_IP=$(host $SERVER_HOST 2>/dev/null | awk '/has address/{print $4; exit}')
-    [ -n "$SERVER_IP" ] || SERVER_IP="$SERVER_HOST"
+    local retries=5
+    local i=0
+    while [ $i -lt $retries ]; do
+        SERVER_IP=$(host $SERVER_HOST 2>/dev/null | awk '/has address/{print $4; exit}')
+        [ -n "$SERVER_IP" ] && break
+        i=$((i + 1))
+        echo "    waiting for DNS... ($i/$retries)"
+        sleep 1
+    done
+    [ -n "$SERVER_IP" ] || die "Cannot resolve $SERVER_HOST"
 }
 
 prepare_conf() {
