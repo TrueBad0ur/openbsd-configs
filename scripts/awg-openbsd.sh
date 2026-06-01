@@ -26,6 +26,8 @@ done
 [ -n "$CONF" ] || usage
 [ -n "$CMD" ] || usage
 
+[ "$(id -u)" -eq 0 ] || exec doas "$0" --config "$CONF" "$CMD"
+
 AWG_CONF="/tmp/awg-openbsd-$(basename $CONF .conf).conf"
 INTERFACE=""
 GW="$(netstat -nr | awk '/^default/{print $2; exit}')"
