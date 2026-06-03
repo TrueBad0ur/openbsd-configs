@@ -4,11 +4,21 @@ Personal site + DDoS defence on OpenBSD.
 
 Domain: `オープンビーエスディー.きく.コム` (`xn--dckjf5dtd7c1a8tzcde.xn--w8je.xn--tckwe`)
 
+## Architecture
+
+```
+Client → relayd:443 (TLS) → Anubis:8923 (PoW bot protection) → httpd:8080 (static files)
+         httpd:80 (ACME challenges + HTTP→HTTPS redirect)
+```
+
 ## Setup
 
 ```sh
-# deploy httpd + get TLS cert + setup cron
+# full deploy: httpd + cert + anubis + relayd + cron
 make deploy
+
+# deploy/update anubis + relayd only
+make anubis
 
 # renew cert manually
 make cert
@@ -20,9 +30,11 @@ make ddos
 ## Files
 
 ```
-httpd.conf              final config: HTTP → HTTPS redirect + TLS on 443
-httpd-bootstrap.conf    bootstrap config: HTTP only (used during cert request)
-acme-client.conf        letsencrypt config for the domain
+httpd.conf              backend: internal 127.0.0.1:8080 + port 80 ACME/redirect
+httpd-bootstrap.conf    bootstrap: HTTP only (used during initial cert request)
+acme-client.conf        letsencrypt config
+relayd.conf             TLS termination on 443 → Anubis:8923
+anubis.env              Anubis config (bind, target, difficulty, cookie domain)
 index.html              landing page
 ddos_defence/           pf rate limiting rules + monitoring tools
 ```
