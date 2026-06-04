@@ -1,11 +1,12 @@
-.PHONY: all deploy update cert ddos anubis
+.PHONY: all deploy update cert ddos anubis servers
 
 CERT_BUNDLE = /etc/ssl/0.0.0.0:443.crt
 CERT_KEY    = /etc/ssl/private/0.0.0.0:443.key
 CERT_SRC    = /etc/ssl/openbsd-kiku.crt
 CHAIN_SRC   = /etc/ssl/openbsd-kiku-chain.crt
 KEY_SRC     = /etc/ssl/private/openbsd-kiku.key
-CRON_ENTRY  = 0 0 * * * acme-client openbsd-kiku && cat $(CERT_SRC) $(CHAIN_SRC) > "$(CERT_BUNDLE)" && rcctl reload relayd
+CRON_ENTRY        = 0 0 * * * acme-client openbsd-kiku && cat $(CERT_SRC) $(CHAIN_SRC) > "$(CERT_BUNDLE)" && rcctl reload relayd
+SERVERS_SCRIPT != realpath ../scripts/generate_servers_html.py
 
 all: deploy
 
@@ -44,8 +45,14 @@ update:
 	doas cp httpd.conf       /etc/httpd.conf
 	doas rcctl restart httpd
 	$(MAKE) anubis
+	$(MAKE) servers
 	doas crontab -l 2>/dev/null | grep -qF 'acme-client openbsd-kiku' || \
 		(doas crontab -l 2>/dev/null; echo "$(CRON_ENTRY)") | doas crontab -
+
+servers:
+	doas /usr/local/bin/python3 $(SERVERS_SCRIPT)
+	(doas crontab -l 2>/dev/null | grep -vF 'generate_servers_html'; \
+		echo "*/1 * * * * /usr/local/bin/python3 $$(realpath $(SERVERS_SCRIPT)) >> /var/log/servers_html.log 2>&1") | doas crontab -
 
 cert:
 	doas acme-client -v openbsd-kiku
