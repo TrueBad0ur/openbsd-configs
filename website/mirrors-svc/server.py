@@ -6,18 +6,49 @@ Add new pages: append to REGISTRY.
 """
 
 import asyncio
+import concurrent.futures
+import concurrent.futures.thread
+import concurrent.futures.process
+import ctypes
+import ctypes.util
+import encodings.ascii
+import encodings.idna
+import encodings.latin_1
+import encodings.utf_8
+import http.client
 import mimetypes
 import os
+import platform
 import sys
 import time
 import logging
 from pathlib import Path
 from aiohttp import web
+import aiohttp.web_fileresponse
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import mirrors as mirrors_checker
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
+
+
+def harden():
+    """Apply pledge + unveil on OpenBSD. No-op on other systems."""
+    if platform.system() != "OpenBSD":
+        return
+    # warm up ThreadPoolExecutor lazy init before locking down FS
+    pool = concurrent.futures.ThreadPoolExecutor(max_workers=1)
+    pool.shutdown(wait=False)
+
+    libc = ctypes.CDLL(ctypes.util.find_library("c"), use_errno=True)
+
+    libc.unveil(str(STATIC_ROOT).encode(), b"r")
+    libc.unveil(b"/etc/ssl/cert.pem", b"r")
+    libc.unveil(None, None)
+
+    r = libc.pledge(b"stdio inet dns rpath", None)
+    if r != 0:
+        raise OSError(ctypes.get_errno(), "pledge failed")
 log = logging.getLogger(__name__)
 
 HOST        = "127.0.0.1"
@@ -219,6 +250,8 @@ async def on_startup(app):
     for path, checker, _ in REGISTRY:
         task = asyncio.create_task(checker_loop(path, checker, INTERVAL))
         app["tasks"].append(task)
+    harden()
+    log.info("process hardened (pledge+unveil)")
 
 
 async def on_cleanup(app):

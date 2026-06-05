@@ -39,15 +39,22 @@ anubis:
 
 mirrorssvc:
 	doas pkg_add py3-aiohttp 2>/dev/null || true
+	grep -q '^_mirrorssvc:' /etc/passwd || \
+		doas useradd -c "mirrors-svc daemon" -d /var/empty -s /sbin/nologin -r 500..999 _mirrorssvc
 	doas mkdir -p /home/scripts/mirrors-svc
 	doas cp mirrors-svc/server.py  /home/scripts/mirrors-svc/server.py
 	doas cp mirrors-svc/mirrors.py /home/scripts/mirrors-svc/mirrors.py
+	doas chown -R root:_mirrorssvc /home/scripts/mirrors-svc
+	doas chmod -R 750 /home/scripts/mirrors-svc
 	doas cp mirrors-svc/rc.d/mirrorssvc /etc/rc.d/mirrorssvc
 	doas chmod +x /etc/rc.d/mirrorssvc
 	doas rcctl disable httpd
 	doas rcctl stop httpd 2>/dev/null || true
 	doas rcctl enable mirrorssvc
-	doas rcctl restart mirrorssvc
+	doas rcctl stop mirrorssvc 2>/dev/null || true
+	doas fstat -n | awk '/8080/{print $$3}' | xargs -r doas kill 2>/dev/null || true
+	sleep 1
+	doas rcctl start mirrorssvc
 
 update:
 	doas cp acme-client.conf /etc/acme-client.conf
