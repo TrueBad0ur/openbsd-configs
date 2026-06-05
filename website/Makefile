@@ -1,12 +1,11 @@
-.PHONY: all deploy update cert ddos anubis servers
+.PHONY: all deploy update cert ddos anubis mirrorssvc
 
 CERT_BUNDLE = /etc/ssl/0.0.0.0:443.crt
 CERT_KEY    = /etc/ssl/private/0.0.0.0:443.key
 CERT_SRC    = /etc/ssl/openbsd-kiku.crt
 CHAIN_SRC   = /etc/ssl/openbsd-kiku-chain.crt
 KEY_SRC     = /etc/ssl/private/openbsd-kiku.key
-CRON_ENTRY        = 0 0 * * * acme-client openbsd-kiku && cat $(CERT_SRC) $(CHAIN_SRC) > "$(CERT_BUNDLE)" && rcctl reload relayd
-SERVERS_SCRIPT != realpath ../scripts/generate_servers_html.py
+CRON_ENTRY  = 0 0 * * * acme-client openbsd-kiku && cat $(CERT_SRC) $(CHAIN_SRC) > "$(CERT_BUNDLE)" && rcctl reload relayd
 
 all: deploy
 
@@ -18,9 +17,8 @@ deploy:
 	doas rcctl enable httpd
 	doas rcctl restart httpd
 	doas acme-client -v openbsd-kiku
-	doas cp httpd.conf /etc/httpd.conf
-	doas rcctl restart httpd
 	$(MAKE) anubis
+	$(MAKE) mirrorssvc
 	doas crontab -l 2>/dev/null | grep -qF 'acme-client openbsd-kiku' || \
 		(doas crontab -l 2>/dev/null; echo "$(CRON_ENTRY)") | doas crontab -
 
@@ -39,20 +37,25 @@ anubis:
 	doas rcctl restart anubis
 	doas rcctl restart relayd
 
+mirrorssvc:
+	doas pkg_add py3-aiohttp 2>/dev/null || true
+	doas mkdir -p /home/scripts/mirrors-svc
+	doas cp mirrors-svc/server.py  /home/scripts/mirrors-svc/server.py
+	doas cp mirrors-svc/mirrors.py /home/scripts/mirrors-svc/mirrors.py
+	doas cp mirrors-svc/rc.d/mirrorssvc /etc/rc.d/mirrorssvc
+	doas chmod +x /etc/rc.d/mirrorssvc
+	doas rcctl disable httpd
+	doas rcctl stop httpd 2>/dev/null || true
+	doas rcctl enable mirrorssvc
+	doas rcctl restart mirrorssvc
+
 update:
 	doas cp acme-client.conf /etc/acme-client.conf
 	doas cp index.html       /var/www/htdocs/index.html
-	doas cp httpd.conf       /etc/httpd.conf
-	doas rcctl restart httpd
 	$(MAKE) anubis
-	$(MAKE) servers
+	$(MAKE) mirrorssvc
 	doas crontab -l 2>/dev/null | grep -qF 'acme-client openbsd-kiku' || \
 		(doas crontab -l 2>/dev/null; echo "$(CRON_ENTRY)") | doas crontab -
-
-servers:
-	doas /usr/local/bin/python3 $(SERVERS_SCRIPT)
-	(doas crontab -l 2>/dev/null | grep -vF 'generate_servers_html'; \
-		echo "*/1 * * * * /usr/local/bin/python3 $$(realpath $(SERVERS_SCRIPT)) >> /var/log/servers_html.log 2>&1") | doas crontab -
 
 cert:
 	doas acme-client -v openbsd-kiku
