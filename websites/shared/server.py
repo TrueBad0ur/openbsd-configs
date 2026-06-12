@@ -8,7 +8,6 @@ Behind relayd:443 → Anubis:8923 → this service.
 import asyncio
 import concurrent.futures
 import concurrent.futures.thread
-import concurrent.futures.process
 import ctypes, ctypes.util
 import encodings.ascii
 import encodings.idna
@@ -51,7 +50,6 @@ def harden():
     libc.unveil(str(STATIC_ROOT).encode(), b"r")
     libc.unveil(str(ASSETS_DIR).encode(), b"r")
     libc.unveil(b"/var/db/mails/mails.db", b"r")
-    libc.unveil(b"/etc/ssl/cert.pem", b"r")
     libc.unveil(None, None)
     r = libc.pledge(b"stdio inet dns rpath flock", None)
     if r != 0:
@@ -119,15 +117,6 @@ async def mails_thread(request):
 
 
 # === MIRRORS ===
-
-MIRRORS_JS = None
-
-def _load_mirrors():
-    global MIRRORS_JS
-    if MIRRORS_JS is None:
-        # Inline the mirrors page (same as original mirrors-svc)
-        pass
-
 
 def make_mirrors_page(title, api_path):
     async def handler(request):

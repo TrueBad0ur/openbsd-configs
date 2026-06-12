@@ -10,8 +10,7 @@ import email.utils
 import re
 import sqlite3
 import sys
-import os
-from datetime import datetime, timezone
+from datetime import timezone
 
 DB_PATH = "/var/db/mails/mails.db"
 
@@ -192,7 +191,20 @@ def insert(conn, row):
         sys.stderr.write(f"db error: {e}\n")
 
 
+def harden():
+    import platform, ctypes, ctypes.util
+    if platform.system() != "OpenBSD":
+        return
+    libc = ctypes.CDLL(ctypes.util.find_library("c"), use_errno=True)
+    libc.unveil(DB_PATH.encode(),                   b"rwc")
+    libc.unveil(b"/var/db/mails/majordomo.log",     b"rwc")
+    libc.unveil(b"/var/db/mails",                   b"rwc")
+    libc.unveil(None, None)
+    libc.pledge(b"stdio rpath wpath cpath flock", None)
+
+
 def main():
+    harden()
     conn = sqlite3.connect(DB_PATH)
     init_db(conn)
 

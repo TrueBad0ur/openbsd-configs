@@ -1,7 +1,9 @@
 const API = '__API_PATH__';
 let _data = null;
 let _activeTab = 'feed';
-let _activeFilter = 'all';
+let _activeFilters = new Set();
+let _filterOpen = false;
+let _returnTab = 'feed';
 
 function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
@@ -50,20 +52,42 @@ function switchTab(tab) {
   renderFilters();
 }
 
-function filterMessages(list) {
-  _activeFilter = list;
-  document.querySelectorAll('.filter-btn').forEach(b => b.classList.toggle('active', b.dataset.list === list));
+function toggleFilter(list) {
+  if (list === 'all') {
+    _activeFilters.clear();
+  } else {
+    if (_activeFilters.has(list)) _activeFilters.delete(list);
+    else _activeFilters.add(list);
+  }
+  renderFilters();
   renderCurrentTab();
+}
+
+function toggleFilterDropdown(e) {
+  e.stopPropagation();
+  _filterOpen = !_filterOpen;
+  renderFilters();
 }
 
 function renderFilters() {
   const el = document.getElementById('filters');
   if (!_data) { el.innerHTML = ''; return; }
-  const filters = ['all', ..._data.lists].map(l =>
-    '<button class="filter-btn'+(l===_activeFilter?' active':'')+'" data-list="'+esc(l)+'" onclick="filterMessages(\''+esc(l)+'\')">'
-    +(l==='all'?'All':esc(l.replace('openbsd-','')))+'</button>'
-  ).join('');
-  el.innerHTML = filters;
+  const isAll = _activeFilters.size === 0;
+  const label = isAll ? 'All lists'
+    : _activeFilters.size === 1 ? [..._activeFilters][0].replace('openbsd-', '')
+    : _activeFilters.size + ' lists';
+  const options = ['all', ..._data.lists].map(l => {
+    const checked = l === 'all' ? isAll : _activeFilters.has(l);
+    const display = l === 'all' ? 'All' : esc(l.replace('openbsd-', ''));
+    return '<div class="filter-option' + (checked ? ' checked' : '') + '" onclick="toggleFilter(\'' + l + '\')">'
+      + '<span class="filter-check">' + (checked ? '&#10003;' : '') + '</span>'
+      + display + '</div>';
+  }).join('');
+  el.innerHTML = '<div class="filter-select">'
+    + '<button class="filter-trigger" onclick="toggleFilterDropdown(event)">'
+    + esc(label) + '<span class="filter-arrow">' + (_filterOpen ? '&#9652;' : '&#9662;') + '</span></button>'
+    + '<div class="filter-dropdown' + (_filterOpen ? ' open' : '') + '">'
+    + options + '</div></div>';
 }
 
 function renderCurrentTab() {
@@ -130,7 +154,7 @@ function toggleRaw(btn, id, showRaw) {
 // --- Navigation ---
 
 async function openThread(threadId, push = true) {
-  if (push) pushState({ thread: String(threadId) });
+  if (push) { _returnTab = _activeTab; pushState({ thread: String(threadId) }); }
   const el = document.getElementById('content');
   el.innerHTML = '<p class="spinner">loading thread...</p>';
   try {
@@ -196,7 +220,7 @@ async function openMessage(msgId, push = true) {
 
 function showList(push = true) {
   if (push) pushState(null);
-  if (_data) render(_data);
+  if (_data) { render(_data); switchTab(_returnTab); }
 }
 
 function copyLink() {
@@ -208,7 +232,7 @@ function copyLink() {
 function renderFeed() {
   if (!_data) return;
   let msgs = _data.messages;
-  if (_activeFilter !== 'all') msgs = msgs.filter(m => m.list === _activeFilter);
+  if (_activeFilters.size > 0) msgs = msgs.filter(m => _activeFilters.has(m.list));
   const rows = msgs.map(m => {
     return '<div class="msg-row" onclick="openMessage('+m.id+')">'
       + '<span class="msg-date">'+esc(m.date)+'</span>'
@@ -222,7 +246,7 @@ function renderFeed() {
 function renderThreads() {
   if (!_data) return;
   let threads = _data.threads;
-  if (_activeFilter !== 'all') threads = threads.filter(t => t.lists && t.lists.includes(_activeFilter));
+  if (_activeFilters.size > 0) threads = threads.filter(t => t.lists && t.lists.some(l => _activeFilters.has(l)));
   const rows = threads.map(t => {
     const authors = (t.authors || []).join(', ');
     const badges = (t.lists || []).map(l =>
@@ -303,3 +327,7 @@ async function fetchData() {
 }
 
 fetchData();
+
+document.addEventListener('click', () => {
+  if (_filterOpen) { _filterOpen = false; renderFilters(); }
+});
