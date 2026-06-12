@@ -50,6 +50,7 @@ def harden():
     libc.unveil(str(STATIC_ROOT).encode(), b"r")
     libc.unveil(str(ASSETS_DIR).encode(), b"r")
     libc.unveil(b"/var/db/mails/mails.db", b"r")
+    libc.unveil(b"/etc/ssl/cert.pem", b"r")
     libc.unveil(None, None)
     r = libc.pledge(b"stdio inet dns rpath flock", None)
     if r != 0:
