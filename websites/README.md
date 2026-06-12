@@ -90,11 +90,12 @@ unsubscribe tech lists@xn--dckjf5dtd7c1a8tzcde.xn--w8je.xn--tckwe
 websites/
 ├── Makefile                    # top-level deploy
 ├── root/
-│   └── index.html              # main landing page
+│   └── assets/                 # main landing page (HTML/CSS/JS)
 ├── shared/
 │   ├── server.py               # unified aiohttp service (port 8080)
 │   └── rc.d/websvc             # rc.d daemon script (_websvc user)
 ├── mirrors/
+│   ├── assets/                 # mirrors frontend (HTML/CSS/JS)
 │   ├── httpd.conf              # ACME + HTTP→HTTPS redirect
 │   ├── relayd.conf             # TLS termination
 │   ├── acme-client.conf        # Let's Encrypt

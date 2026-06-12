@@ -56,12 +56,15 @@ services:
 	doas pkg_add py3-aiohttp 2>/dev/null || true
 	grep -q '^_websvc:' /etc/passwd || \
 		doas useradd -c "website service daemon" -d /var/empty -s /sbin/nologin -r 500..999 _websvc
-	doas mkdir -p ${SVC_DIR}/assets
+	doas mkdir -p ${SVC_DIR}/assets ${SVC_DIR}/mirrors-assets
+	doas mkdir -p /var/www/htdocs/assets
 	doas cp ${REPO}/shared/server.py                    ${SVC_DIR}/server.py
 	doas cp ${REPO}/mirrors/mirrors-svc/mirrors.py      ${SVC_DIR}/mirrors.py
 	doas cp ${REPO}/mails/mail.py                       ${SVC_DIR}/mail.py
 	doas sh -c 'cp ${REPO}/mails/assets/* ${SVC_DIR}/assets/'
-	doas cp ${REPO}/root/index.html                     /var/www/htdocs/index.html
+	doas sh -c 'cp ${REPO}/mirrors/assets/* ${SVC_DIR}/mirrors-assets/'
+	doas cp ${REPO}/root/assets/index.html              /var/www/htdocs/index.html
+	doas sh -c 'cp ${REPO}/root/assets/style.css ${REPO}/root/assets/app.js /var/www/htdocs/assets/'
 	doas chown -R root:_websvc ${SVC_DIR}
 	doas chmod -R 750 ${SVC_DIR}
 	doas cp ${REPO}/shared/rc.d/websvc /etc/rc.d/websvc
