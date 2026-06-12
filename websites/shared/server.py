@@ -36,7 +36,7 @@ ASSETS_DIR = SVC_DIR / "assets"
 # (path, checker, interval, title)
 REGISTRY = [
     ("/mirrors", mirrors_checker, 300, "OpenBSD Mirror Status"),
-    ("/mails",   mail_checker,    600, "OpenBSD Mailing Lists"),
+    ("/mails",   mail_checker,     60, "OpenBSD Mailing Lists"),
 ]
 
 state = {p: {"data": None, "last_updated": 0.0, "next_update": 0.0} for p, _, _, _ in REGISTRY}
@@ -50,9 +50,10 @@ def harden():
     libc = ctypes.CDLL(ctypes.util.find_library("c"), use_errno=True)
     libc.unveil(str(STATIC_ROOT).encode(), b"r")
     libc.unveil(str(ASSETS_DIR).encode(), b"r")
+    libc.unveil(b"/var/db/mails/mails.db", b"r")
     libc.unveil(b"/etc/ssl/cert.pem", b"r")
     libc.unveil(None, None)
-    r = libc.pledge(b"stdio inet dns rpath", None)
+    r = libc.pledge(b"stdio inet dns rpath flock", None)
     if r != 0:
         raise OSError(ctypes.get_errno(), "pledge failed")
 
@@ -119,14 +120,14 @@ def make_mails_assets(api_path):
 
 async def mails_msg(request):
     data, err = await asyncio.get_event_loop().run_in_executor(
-        None, mail_checker.fetch_body, request.match_info["list"], request.match_info["id"])
-    return web.json_response(data if not err else {"error": err}, status=200 if not err else 502)
+        None, mail_checker.fetch_body, None, request.match_info["id"])
+    return web.json_response(data if not err else {"error": err}, status=200 if not err else 404 if err == "not found" else 502)
 
 
 async def mails_thread(request):
     data, err = await asyncio.get_event_loop().run_in_executor(
         None, mail_checker.fetch_thread, request.match_info["id"])
-    return web.json_response(data if not err else {"error": err}, status=200 if not err else 502)
+    return web.json_response(data if not err else {"error": err}, status=200 if not err else 404 if err == "thread not found" else 502)
 
 
 # === MIRRORS ===
@@ -231,7 +232,7 @@ def make_app():
     app.router.add_get("/mails/",           make_mails_page("OpenBSD Mailing Lists", "/mails/api"))
     app.router.add_get("/mails/api",        make_api_handler("/mails"))
     app.router.add_get("/mails/assets/{path:.*}", make_mails_assets("/mails/api"))
-    app.router.add_get("/mails/msg/{list}/{id}",  mails_msg)
+    app.router.add_get("/mails/msg/{id}",         mails_msg)
     app.router.add_get("/mails/thread/{id}",      mails_thread)
 
     # Static fallback

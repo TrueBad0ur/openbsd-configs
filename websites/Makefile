@@ -1,4 +1,4 @@
-.PHONY: all deploy httpd anubis relayd services cert ddos update clean
+.PHONY: all deploy httpd anubis relayd services mail cert ddos update clean
 
 REPO = ${.CURDIR}
 SVC_DIR = /home/scripts/website-svc
@@ -14,7 +14,7 @@ all: deploy
 
 # --- Full deploy (order matters: cert before anubis/relayd) ---
 
-deploy: httpd anubis relayd services
+deploy: httpd anubis relayd services mail
 	@echo "==> websites deployed"
 
 # --- httpd: ACME challenges + HTTP→HTTPS redirect ---
@@ -74,6 +74,28 @@ services:
 	sleep 1
 	doas rcctl start websvc
 	@echo "==> websvc started on 127.0.0.1:8080"
+
+# --- mail: smtpd + processor ---
+
+MAILPROC_DIR = /home/scripts/mailproc
+DB_DIR       = /var/db/mails
+
+mail:
+	grep -q '^_mailproc:' /etc/passwd || \
+		doas useradd -c "mail processor daemon" -d /var/empty -s /sbin/nologin -r 500..999 _mailproc
+	doas mkdir -p ${MAILPROC_DIR}
+	doas cp ${REPO}/mails/processor.py ${MAILPROC_DIR}/processor.py
+	doas chmod 755 ${MAILPROC_DIR}/processor.py
+	doas chown root:_mailproc ${MAILPROC_DIR}
+	doas chmod 750 ${MAILPROC_DIR}
+	doas mkdir -p ${DB_DIR}
+	doas chown _mailproc:_mailproc ${DB_DIR}
+	doas chmod 755 ${DB_DIR}
+	doas touch ${DB_DIR}/majordomo.log
+	doas chown _mailproc ${DB_DIR}/majordomo.log
+	doas cp ${REPO}/mails/smtpd.conf /etc/mail/smtpd.conf
+	doas smtpd -n && doas rcctl enable smtpd && doas rcctl restart smtpd
+	@echo "==> mail deployed"
 
 # --- Cert renewal ---
 

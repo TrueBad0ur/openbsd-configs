@@ -16,6 +16,33 @@ function startTimer(lastUpdated, nextUpdate) {
   }, 1000);
 }
 
+// --- URL state ---
+
+function pushState(params) {
+  const url = params ? '/mails?' + new URLSearchParams(params).toString() : '/mails';
+  history.pushState(params || null, '', url);
+}
+
+function readURLParams() {
+  const p = new URLSearchParams(location.search);
+  if (p.has('thread')) return { thread: p.get('thread') };
+  if (p.has('msg'))    return { msg: p.get('msg') };
+  return null;
+}
+
+window.addEventListener('popstate', (e) => {
+  const state = e.state;
+  if (!state) {
+    showList(false);
+  } else if (state.thread) {
+    openThread(state.thread, false);
+  } else if (state.msg) {
+    openMessage(state.msg, false);
+  }
+});
+
+// --- Tab / filter ---
+
 function switchTab(tab) {
   _activeTab = tab;
   document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab === tab));
@@ -45,6 +72,8 @@ function renderCurrentTab() {
   else if (_activeTab === 'threads') renderThreads();
   else if (_activeTab === 'stats') renderStats();
 }
+
+// --- Body rendering ---
 
 function cleanBody(text) {
   if (!text) return '';
@@ -120,7 +149,10 @@ function toggleRaw(btn, id, showRaw) {
   btn.classList.add('active');
 }
 
-async function openThread(threadId) {
+// --- Navigation ---
+
+async function openThread(threadId, push = true) {
+  if (push) pushState({ thread: String(threadId) });
   const el = document.getElementById('content');
   el.innerHTML = '<p class="spinner">loading thread...</p>';
   try {
@@ -133,7 +165,7 @@ async function openThread(threadId) {
     let html = '<div class="thread-view">'
       + '<div class="msg-detail-header">'
       + '<button class="back-btn" onclick="showList()">&larr; Back</button>'
-      + '<a class="marc-link" href="https://marc.info/?t=' + threadId + '&r=1&w=2" target="_blank">Open on marc.info ↗</a>'
+      + '<button class="share-btn" onclick="copyLink()" title="Copy shareable link">&#128279; Copy link</button>'
       + '</div>'
       + '<h2 style="margin-bottom:16px;font-size:18px;">' + esc(subject) + '</h2>'
       + '<p class="subtitle">' + msgs.length + ' messages</p>';
@@ -146,6 +178,7 @@ async function openThread(threadId) {
         + '<div class="conv-date">' + esc(msg.date) + '</div>'
         + '</div>'
         + '<span class="badge">' + esc(msg.list.replace('openbsd-','')) + '</span>'
+        + '<button class="msg-link-btn" onclick="openMessage('+msg.id+'); event.stopPropagation();" title="Permalink">&#9900;</button>'
         + '</div>'
         + '<div class="conv-body">' + highlightBody(msg.body) + '</div>'
         + '</div>';
@@ -157,18 +190,19 @@ async function openThread(threadId) {
   }
 }
 
-async function openMessage(list, id) {
+async function openMessage(msgId, push = true) {
+  if (push) pushState({ msg: String(msgId) });
   const el = document.getElementById('content');
   el.innerHTML = '<p class="spinner">loading message...</p>';
   try {
-    const r = await fetch('/mails/msg/' + list + '/' + id);
+    const r = await fetch('/mails/msg/' + msgId);
     if (!r.ok) throw new Error('HTTP ' + r.status);
     const msg = await r.json();
     if (msg.error) throw new Error(msg.error);
     el.innerHTML = '<div class="msg-detail">'
       + '<div class="msg-detail-header">'
       + '<button class="back-btn" onclick="showList()">&larr; Back</button>'
-      + '<a class="marc-link" href="' + esc(msg.url) + '" target="_blank">Open on marc.info ↗</a>'
+      + '<button class="share-btn" onclick="copyLink()" title="Copy shareable link">&#128279; Copy link</button>'
       + '</div>'
       + '<div class="msg-detail-meta">'
       + '<div class="msg-meta-row"><span class="msg-meta-label">From</span><span class="msg-meta-val">' + esc(msg.author) + '</span></div>'
@@ -182,16 +216,24 @@ async function openMessage(list, id) {
   }
 }
 
-function showList() { render(_data); }
+function showList(push = true) {
+  if (push) pushState(null);
+  if (_data) render(_data);
+}
+
+function copyLink() {
+  navigator.clipboard.writeText(location.href).catch(() => {});
+}
+
+// --- List views ---
 
 function renderFeed() {
   if (!_data) return;
   let msgs = _data.messages;
   if (_activeFilter !== 'all') msgs = msgs.filter(m => m.list === _activeFilter);
   const rows = msgs.map(m => {
-    const replies = m.replies > 0 ? '<span class="msg-replies">'+m.replies+' replies</span>' : '';
-    return '<div class="msg-row" onclick="openMessage(\''+esc(m.list)+'\',\''+esc(m.message_id)+'\')">'
-      + '<span class="msg-date">'+esc(m.date)+'</span>' + replies
+    return '<div class="msg-row" onclick="openMessage('+m.id+')">'
+      + '<span class="msg-date">'+esc(m.date)+'</span>'
       + '<span class="msg-subj">'+esc(m.subject)+'</span>'
       + '<span class="msg-author">'+esc(m.author)+'</span></div>';
   }).join('');
@@ -202,15 +244,14 @@ function renderFeed() {
 function renderThreads() {
   if (!_data) return;
   let threads = _data.threads;
-  if (_activeFilter !== 'all') threads = threads.filter(t => t.messages.some(m => m.list === _activeFilter));
+  if (_activeFilter !== 'all') threads = threads.filter(t => t.lists && t.lists.includes(_activeFilter));
   const rows = threads.map(t => {
-    const count = t.count || t.actual_count;
-    const authors = t.authors.join(', ');
-    const badges = [...new Set(t.messages.map(m => m.list))].map(l =>
+    const authors = (t.authors || []).join(', ');
+    const badges = (t.lists || []).map(l =>
       '<span class="badge">'+esc(l.replace('openbsd-',''))+'</span>').join(' ');
-    return '<div class="thread-row" onclick="openThread(\''+esc(t.thread_id)+'\')">'
+    return '<div class="thread-row" onclick="openThread('+t.thread_id+')">'
       + '<div class="thread-subj">'+esc(t.subject)+'</div>'
-      + '<div class="thread-meta"><span>'+count+' messages</span><span>'+authors+'</span>'+badges+'</div></div>';
+      + '<div class="thread-meta"><span>'+t.count+' messages</span><span>'+esc(authors)+'</span>'+badges+'</div></div>';
   }).join('');
   document.getElementById('sec-threads').innerHTML =
     '<p class="subtitle">'+threads.length+' threads</p><div class="card">'+rows+'</div>';
@@ -222,14 +263,14 @@ function renderStats() {
   const mx = s.top_authors.length ? s.top_authors[0].count : 1;
   const cards = [
     '<div class="stat-card"><div class="stat-val">'+s.total+'</div><div class="stat-label">messages</div></div>',
-    '<div class="stat-card"><div class="stat-val">'+_data.threads.length+'</div><div class="stat-label">threads</div></div>',
+    '<div class="stat-card"><div class="stat-val">'+(_data.threads||[]).length+'</div><div class="stat-label">threads</div></div>',
     '<div class="stat-card"><div class="stat-val">'+s.top_authors.length+'</div><div class="stat-label">authors</div></div>',
-    '<div class="stat-card"><div class="stat-val">'+_data.lists.length+'</div><div class="stat-label">lists</div></div>',
+    '<div class="stat-card"><div class="stat-val">'+(_data.lists||[]).length+'</div><div class="stat-label">lists</div></div>',
   ].join('');
   const authors = s.top_authors.map(a =>
     '<div class="author-row"><span class="author-name">'+esc(a.name)+'</span><span class="author-count">'+a.count+'</span></div>'
     + '<div class="bar"><div class="bar-fill" style="width:'+(a.count/mx*100)+'%"></div></div>').join('');
-  const lists = s.list_breakdown.map(l =>
+  const lists = (s.list_breakdown||[]).map(l =>
     '<div class="author-row"><span class="author-name">'+esc(l.list)+'</span><span class="author-count">'+l.count+'</span></div>').join('');
   document.getElementById('sec-stats').innerHTML =
     '<div style="margin-bottom:24px">'+cards+'</div>'
@@ -250,14 +291,37 @@ function render(d) {
   renderFilters(); renderFeed(); renderThreads(); renderStats();
 }
 
+// --- Bootstrap ---
+
 let _nextFetch = null;
 async function fetchData() {
   if (_nextFetch) clearTimeout(_nextFetch);
   try {
     const r = await fetch(API);
-    if (r.status===503) { document.getElementById('content').innerHTML='<p class="spinner">fetching...</p>'; _nextFetch=setTimeout(fetchData,3000); return; }
-    const j = await r.json(); render(j.data); startTimer(j.last_updated, j.next_update);
-    _nextFetch=setTimeout(fetchData, Math.max(5000, j.next_update*1000-Date.now()+3000));
-  } catch(e) { document.getElementById('content').innerHTML='<p class="spinner">error: '+e.message+'</p>'; _nextFetch=setTimeout(fetchData,10000); }
+    if (r.status === 503) {
+      document.getElementById('content').innerHTML = '<p class="spinner">fetching...</p>';
+      _nextFetch = setTimeout(fetchData, 3000);
+      return;
+    }
+    const j = await r.json();
+    _data = j.data;
+    startTimer(j.last_updated, j.next_update);
+
+    // Handle direct URL load (shareable link)
+    const params = readURLParams();
+    if (params && params.thread) {
+      openThread(params.thread, false);
+    } else if (params && params.msg) {
+      openMessage(params.msg, false);
+    } else {
+      render(_data);
+    }
+
+    _nextFetch = setTimeout(fetchData, Math.max(5000, j.next_update * 1000 - Date.now() + 3000));
+  } catch(e) {
+    document.getElementById('content').innerHTML = '<p class="spinner">error: ' + e.message + '</p>';
+    _nextFetch = setTimeout(fetchData, 10000);
+  }
 }
+
 fetchData();
