@@ -85,35 +85,23 @@ def make_api_handler(path):
 
 # === MAILS ===
 
-MAILS_INDEX = None
-MAILS_JS = None
-
-def _load_mails():
-    global MAILS_INDEX, MAILS_JS
-    if MAILS_INDEX is None:
-        MAILS_INDEX = (ASSETS_DIR / "index.html").read_text()
-        MAILS_JS = (ASSETS_DIR / "app.js").read_text()
-
-
 def make_mails_page(title, api_path):
-    _load_mails()
-    html = MAILS_INDEX.replace("__API_PATH__", api_path)
     async def handler(request):
+        html = (ASSETS_DIR / "index.html").read_text().replace("__API_PATH__", api_path)
         return web.Response(text=html, content_type="text/html")
     return handler
 
 
 def make_mails_assets(api_path):
-    _load_mails()
-    js = MAILS_JS.replace("__API_PATH__", api_path)
     async def handler(request):
         rel = request.match_info.get("path", "index.html")
-        if rel == "app.js":
-            return web.Response(text=js, content_type="application/javascript")
         p = ASSETS_DIR / rel
         if not p.exists() or not p.is_file():
             raise web.HTTPNotFound()
         mime, _ = mimetypes.guess_type(str(p))
+        if rel == "app.js":
+            text = p.read_text().replace("__API_PATH__", api_path)
+            return web.Response(text=text, content_type="application/javascript")
         return web.FileResponse(p, headers={"Content-Type": mime or "application/octet-stream"})
     return handler
 

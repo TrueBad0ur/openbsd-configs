@@ -82,14 +82,11 @@ function cleanBody(text) {
   return t;
 }
 
-function highlightBody(text, raw) {
-  if (!text) return '';
-  const display = raw ? text : cleanBody(text);
-  const hasDiff = /^(@@|diff |Index:|\+\+\+|---)/m.test(display);
-  const lines = display.split('\n');
+function _renderBody(text) {
+  const hasDiff = /^(@@|diff |Index:|\+\+\+|---)/m.test(text);
   const result = [];
   let inHunk = false;
-  for (const line of lines) {
+  for (const line of text.split('\n')) {
     if (line.startsWith('>')) {
       result.push('<span class="quote">' + esc(line) + '</span>\n');
     } else if (line.startsWith('@@')) {
@@ -108,43 +105,24 @@ function highlightBody(text, raw) {
       result.push(esc(line) + '\n');
     }
   }
-  const body = '<pre class="msg-body' + (hasDiff ? ' diff' : '') + '">' + result.join('') + '</pre>';
-  const toggleId = 'body-' + Math.random().toString(36).slice(2,8);
+  return '<pre class="msg-body' + (hasDiff ? ' diff' : '') + '">' + result.join('') + '</pre>';
+}
+
+function highlightBody(text) {
+  if (!text) return '';
+  const toggleId = 'body-' + Math.random().toString(36).slice(2, 8);
   const btns = '<div class="body-toggle">'
-    + '<button class="toggle-btn' + (raw ? '' : ' active') + '" onclick="toggleRaw(this, \'' + toggleId + '\', false)">Clean</button>'
-    + '<button class="toggle-btn' + (raw ? ' active' : '') + '" onclick="toggleRaw(this, \'' + toggleId + '\', true)">Raw</button>'
+    + '<button class="toggle-btn active" onclick="toggleRaw(this,\'' + toggleId + '\',false)">Clean</button>'
+    + '<button class="toggle-btn" onclick="toggleRaw(this,\'' + toggleId + '\',true)">Raw</button>'
     + '</div>';
-  return btns + '<div id="' + toggleId + '" data-raw="' + esc(text).replace(/"/g, '&quot;') + '">' + body + '</div>';
+  return btns + '<div id="' + toggleId + '" data-raw="' + esc(text).replace(/"/g, '&quot;') + '">'
+    + _renderBody(cleanBody(text)) + '</div>';
 }
 
 function toggleRaw(btn, id, showRaw) {
   const container = document.getElementById(id);
-  const rawText = container.dataset.raw;
-  const display = showRaw ? rawText : cleanBody(rawText);
-  const hasDiff = /^(@@|diff |Index:|\+\+\+|---)/m.test(display);
-  const lines = display.split('\n');
-  const result = [];
-  let inHunk = false;
-  for (const line of lines) {
-    if (line.startsWith('>')) {
-      result.push('<span class="quote">' + esc(line) + '</span>\n');
-    } else if (line.startsWith('@@')) {
-      inHunk = true;
-      result.push('<span class="diff-hunk">' + esc(line) + '</span>\n');
-    } else if (/^(diff |Index:|===)/.test(line)) {
-      inHunk = false;
-      result.push('<span class="diff-header">' + esc(line) + '</span>\n');
-    } else if (!inHunk && /^\s*(---|\+\+\+|index )/.test(line)) {
-      result.push('<span class="diff-file">' + esc(line) + '</span>\n');
-    } else if (inHunk && line.startsWith('+')) {
-      result.push('<span class="diff-add">' + esc(line) + '</span>\n');
-    } else if (inHunk && line.startsWith('-')) {
-      result.push('<span class="diff-del">' + esc(line) + '</span>\n');
-    } else {
-      result.push(esc(line) + '\n');
-    }
-  }
-  container.innerHTML = '<pre class="msg-body' + (hasDiff ? ' diff' : '') + '">' + result.join('') + '</pre>';
+  const text = container.dataset.raw;
+  container.innerHTML = _renderBody(showRaw ? text : cleanBody(text));
   btn.parentElement.querySelectorAll('.toggle-btn').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
 }
@@ -167,7 +145,7 @@ async function openThread(threadId, push = true) {
       + '<button class="back-btn" onclick="showList()">&larr; Back</button>'
       + '<button class="share-btn" onclick="copyLink()" title="Copy shareable link">&#128279; Copy link</button>'
       + '</div>'
-      + '<h2 style="margin-bottom:16px;font-size:18px;">' + esc(subject) + '</h2>'
+      + '<h2 class="thread-subject">' + esc(subject) + '</h2>'
       + '<p class="subtitle">' + msgs.length + ' messages</p>';
     msgs.forEach((msg) => {
       html += '<div class="conv-msg">'

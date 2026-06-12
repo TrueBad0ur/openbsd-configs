@@ -357,6 +357,8 @@ h2 {
 .conv-date { font-size: 11px; color: var(--text3); }
 .conv-body { padding: 16px; }
 
+.thread-subject { font-size: 18px; font-weight: 600; color: var(--text); margin-bottom: 16px; text-transform: none; letter-spacing: 0; }
+
 .msg-link-btn {
   font-size: 13px;
   padding: 2px 6px;
