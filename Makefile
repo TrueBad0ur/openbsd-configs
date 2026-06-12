@@ -1,7 +1,7 @@
 REPO != pwd
 AWG_BUILD_DIR ?= $(HOME)/repos
 
-.PHONY: all packages os system zsh xenodm firefox clean awg awg-script claude website ddos \
+.PHONY: all packages os system zsh xenodm firefox clean awg awg-script claude websites ddos \
         link link-rice link-minimal rice
 
 # default: minimal (no picom/polybar)
@@ -119,11 +119,11 @@ awg-script:
 claude:
 	doas npm install -g @anthropic-ai/claude-code@2.1.112 --ignore-scripts
 
-website:
-	$(MAKE) -C website deploy
+websites:
+	$(MAKE) -C websites deploy
 
 ddos:
-	$(MAKE) -C website/ddos_defence deploy
+	$(MAKE) -C websites ddos
 
 firefox:
 	@profile=$$(ls -d $(HOME)/.mozilla/firefox/*.default-release 2>/dev/null | head -1); \

@@ -1,0 +1,12 @@
+#!/bin/ksh
+
+daemon="/usr/local/bin/python3"
+daemon_flags="/home/scripts/mail-svc/server.py"
+daemon_user=_mailsvc
+daemon_logger=daemon.info
+rc_bg=YES
+rc_reload=NO
+
+. /etc/rc.d/rc.subr
+
+rc_cmd $1
