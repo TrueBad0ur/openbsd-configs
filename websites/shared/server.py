@@ -129,42 +129,84 @@ _MIRRORS_HTML = """<!DOCTYPE html>
 <html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>OpenBSD Mirror Status</title>
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap');
 *{margin:0;padding:0;box-sizing:border-box}
-body{background:#0a0a0a;color:#00ff41;font-family:'Share Tech Mono',monospace;min-height:100vh}
-body::before{content:'';position:fixed;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,.08) 2px,rgba(0,0,0,.08) 4px);pointer-events:none;z-index:100}
-.terminal{max-width:960px;margin:0 auto;padding:60px 24px 80px}
-.term-header{display:flex;align-items:center;gap:8px;margin-bottom:40px;padding-bottom:16px;border-bottom:1px solid #1a1a1a}
-.dot{width:12px;height:12px;border-radius:50%}
-.dot-r{background:#ff5f57;box-shadow:0 0 6px #ff5f57}.dot-y{background:#ffbd2e;box-shadow:0 0 6px #ffbd2e}.dot-g{background:#28c840;box-shadow:0 0 6px #28c840}
-.back{font-size:13px;color:#00aa2a;text-decoration:none;margin-left:auto}.back:hover{color:#00ff41}
-h2{font-size:32px;color:#00ff41;letter-spacing:2px;margin-bottom:6px}
-.cmd-block{margin-bottom:16px}
-.cmd-line{font-size:12px;color:#00aa2a;padding:6px 12px;background:#0d0d0d;border-left:2px solid #00aa2a;margin-bottom:4px;word-break:break-all}
+:root{
+  --bg:#1a1a1a;--bg2:#222222;--bg3:#2a2a2a;
+  --border:#333333;--border2:#444444;
+  --text:#e0e0e0;--text2:#999999;--text3:#666666;
+  --accent:#c8a96e;
+  --ok:#4caf6e;--ok2:#2d6b42;
+  --dead:#c0392b;--dead2:#5a1a14;
+}
+body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:14px;line-height:1.5;min-height:100vh}
+a{color:var(--accent);text-decoration:none}
+.wrap{max-width:1400px;width:95%;margin:0 auto;padding:32px 0 80px}
+header{display:flex;align-items:baseline;gap:24px;margin-bottom:28px;padding-bottom:16px;border-bottom:1px solid var(--border)}
+header h1{font-size:16px;font-weight:600;color:var(--text);letter-spacing:.5px;text-transform:uppercase}
+h2{font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:1px;color:var(--text2);margin-bottom:16px}
+.section{margin-bottom:40px}
+.subtitle{font-size:12px;color:var(--text3);margin-bottom:12px;text-transform:uppercase;letter-spacing:.5px}
+.cmd-block{margin-bottom:12px}
+.cmd-line{font-size:12px;color:var(--text2);padding:8px 14px;background:var(--bg2);border:1px solid var(--border);border-left:2px solid var(--accent);margin-bottom:4px;word-break:break-all;font-family:'SF Mono',SFMono-Regular,Consolas,'Liberation Mono',Menlo,monospace}
+.card{border:1px solid var(--border);background:var(--bg2)}
 table{width:100%;border-collapse:collapse;font-size:13px}
-th{text-align:left;font-size:10px;color:#444;letter-spacing:3px;text-transform:uppercase;padding:8px 10px 8px 0;border-bottom:1px solid #1c1c1c}
-td{padding:6px 10px 6px 0;border-bottom:1px solid #111;vertical-align:middle}
-.ok{color:#00ff41}.dead{color:#444}
-.dot-ok{color:#00ff41;text-shadow:0 0 6px #00ff41;font-size:10px}
-.dot-dead{color:#ff4444;text-shadow:0 0 4px #ff4444;font-size:10px}
-.protos{color:#00aa2a;font-size:12px}.dead .protos{color:#333}
-.ms{color:#007a1f;font-size:12px;white-space:nowrap}.dead .ms{color:#333}
-.spinner{color:#555;font-size:13px;margin:40px 0}
-.section{margin-bottom:48px}
-.status-line{position:fixed;bottom:0;left:0;right:0;padding:6px 24px;background:#080808;border-top:1px solid #1a1a1a;display:flex;justify-content:space-between;font-size:11px;color:#333;z-index:50;letter-spacing:1px}
-.status-line span{color:#00aa2a}.ts{color:#555}
+th{text-align:left;font-size:10px;color:var(--text3);letter-spacing:2px;text-transform:uppercase;padding:8px 12px;border-bottom:1px solid var(--border)}
+td{padding:7px 12px;border-bottom:1px solid var(--border);vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tr.ok:hover td{background:var(--bg3)}
+tr.dead td{color:var(--text3)}
+tr.dead:hover td{background:var(--bg3)}
+.status-dot{font-size:9px}
+.dot-ok{color:var(--ok)}
+.dot-dead{color:var(--dead)}
+.proto-badge{display:inline-block;font-size:10px;padding:1px 5px;border:1px solid var(--border2);color:var(--text3);margin-right:2px;text-transform:uppercase;letter-spacing:.5px}
+tr.ok .proto-badge{border-color:var(--ok2);color:var(--ok)}
+.ms{font-size:12px;color:var(--text2);font-variant-numeric:tabular-nums}
+.spinner{color:var(--text3);font-size:13px;margin:60px 0;text-align:center;letter-spacing:1px;text-transform:uppercase}
+.status-bar{position:fixed;bottom:0;left:0;right:0;padding:6px 24px;background:var(--bg2);border-top:1px solid var(--border);display:flex;justify-content:space-between;font-size:11px;color:var(--text3)}
+.status-bar span{color:var(--text2)}
 </style></head><body>
-<div class="terminal">
-<div class="term-header"><div class="dot dot-r"></div><div class="dot dot-y"></div><div class="dot dot-g"></div>
-<span style="font-size:12px;color:#444;margin-left:8px;letter-spacing:2px">truebad0ur@openbsd ~ — ssh</span>
-<a class="back" href="/">&larr; back</a></div>
-<div id="content"><p class="spinner">fetching data...</p></div></div>
-<div class="status-line"><span>OpenBSD 7.9 · aiohttp</span><span class="ts" id="ts">—</span></div>
+<div class="wrap">
+<header><h1>OpenBSD Mirror Status</h1></header>
+<div id="content"><p class="spinner">fetching data...</p></div>
+</div>
+<div class="status-bar"><span>OpenBSD · aiohttp</span><span id="ts">—</span></div>
 <script>
-const API='/mirrors/api';let _d=null;
+const API='/mirrors/api';
 function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
-async function go(){try{const r=await fetch(API);if(r.status===503){document.getElementById('content').innerHTML='<p class="spinner">checking servers...</p>';setTimeout(go,3000);return}const j=await r.json();_d=j.data;render(j.data);const u=new Date(j.last_updated*1000).toISOString().replace('T',' ').slice(0,16)+' UTC';setInterval(()=>{const s=Math.max(0,Math.round((j.next_update*1000-Date.now())/1000));const m=Math.floor(s/60),ss=s%60;document.getElementById('ts').textContent='updated: '+u+' · refresh in '+(s>0?m+':'+String(ss).padStart(2,'0'):'updating...')},1000)}catch(e){document.getElementById('content').innerHTML='<p class="spinner">error: '+e.message+'</p>';setTimeout(go,10000)}}
-function render(d){let h='<div class="section"><h2>BINARIES</h2><p style="font-size:11px;color:#444;margin-bottom:14px;letter-spacing:1px">pkg_add · iso · firmware</p>';h+='<div class="cmd-block"><div class="cmd-line">$ PKG_PATH='+(d.binaries[0]?esc(d.binaries[0].best_url):'')+' pkg_add &lt;package&gt;</div></div>';h+='<table><thead><tr><th></th><th>country</th><th>proto</th><th>host</th><th>ms</th></tr></thead><tbody>';d.binaries.forEach(m=>{h+='<tr class="ok"><td><span class="dot-ok">●</span></td><td>'+esc(m.country)+'</td><td class="protos">'+esc(m.protos.join(' '))+'</td><td>'+esc(m.host)+'</td><td class="ms">'+m.ms+'ms</td></tr>'});d.binary_dead.forEach(m=>{h+='<tr class="dead"><td><span class="dot-dead">●</span></td><td>'+esc(m.country)+'</td><td></td><td>'+esc(m.host)+'</td><td></td></tr>'});h+='</tbody></table></div>';h+='<div class="section"><h2>CVS (anoncvs)</h2><p style="font-size:11px;color:#444;margin-bottom:14px;letter-spacing:1px">src · ports · xenocara</p>';if(d.cvs_cmds){d.cvs_cmds.forEach(c=>{h+='<div class="cmd-block"><div class="cmd-line">$ '+esc(c)+'</div></div>'})}h+='<table><thead><tr><th></th><th>country</th><th>proto</th><th>host</th><th>ms</th></tr></thead><tbody>';d.cvs.forEach(m=>{const p=m.port!==22&&m.port!==2401?':'+m.port:'';h+='<tr class="ok"><td><span class="dot-ok">●</span></td><td>'+esc(m.country)+'</td><td class="protos">'+esc(m.proto+p)+'</td><td>'+esc(m.host)+'</td><td class="ms">'+m.ms+'ms</td></tr>'});d.cvs_dead.forEach(m=>{h+='<tr class="dead"><td><span class="dot-dead">●</span></td><td>'+esc(m.country)+'</td><td></td><td>'+esc(m.host)+'</td><td></td></tr>'});h+='</tbody></table></div>';document.getElementById('content').innerHTML=h}
+function badge(p){return '<span class="proto-badge">'+esc(p)+'</span>'}
+async function go(){
+  try{
+    const r=await fetch(API);
+    if(r.status===503){document.getElementById('content').innerHTML='<p class="spinner">checking servers...</p>';setTimeout(go,3000);return}
+    const j=await r.json();
+    render(j.data);
+    const u=new Date(j.last_updated*1000).toISOString().replace('T',' ').slice(0,16)+' UTC';
+    setInterval(()=>{
+      const s=Math.max(0,Math.round((j.next_update*1000-Date.now())/1000));
+      const m=Math.floor(s/60),ss=s%60;
+      document.getElementById('ts').textContent='Updated '+u+' · refresh in '+(s>0?m+':'+String(ss).padStart(2,'0'):'updating...')
+    },1000)
+  }catch(e){document.getElementById('content').innerHTML='<p class="spinner">error: '+e.message+'</p>';setTimeout(go,10000)}
+}
+function render(d){
+  let h='';
+  h+='<div class="section"><h2>Binaries</h2>';
+  h+='<p class="subtitle">pkg_add · iso · firmware</p>';
+  if(d.binaries[0])h+='<div class="cmd-block"><div class="cmd-line">PKG_PATH='+esc(d.binaries[0].best_url)+' pkg_add &lt;package&gt;</div></div>';
+  h+='<div class="card"><table><thead><tr><th></th><th>Host</th><th>Country</th><th>Proto</th><th>ms</th></tr></thead><tbody>';
+  d.binaries.forEach(m=>{h+='<tr class="ok"><td><span class="status-dot dot-ok">●</span></td><td>'+esc(m.host)+'</td><td>'+esc(m.country)+'</td><td>'+m.protos.map(badge).join('')+'</td><td class="ms">'+m.ms+'</td></tr>'});
+  d.binary_dead.forEach(m=>{h+='<tr class="dead"><td><span class="status-dot dot-dead">●</span></td><td>'+esc(m.host)+'</td><td>'+esc(m.country)+'</td><td></td><td></td></tr>'});
+  h+='</tbody></table></div></div>';
+  h+='<div class="section"><h2>CVS (anoncvs)</h2>';
+  h+='<p class="subtitle">src · ports · xenocara</p>';
+  if(d.cvs_cmds)d.cvs_cmds.forEach(c=>{h+='<div class="cmd-block"><div class="cmd-line">'+esc(c)+'</div></div>'});
+  h+='<div class="card"><table><thead><tr><th></th><th>Host</th><th>Country</th><th>Proto</th><th>ms</th></tr></thead><tbody>';
+  d.cvs.forEach(m=>{const p=m.port!==22&&m.port!==2401?':'+m.port:'';h+='<tr class="ok"><td><span class="status-dot dot-ok">●</span></td><td>'+esc(m.host)+'</td><td>'+esc(m.country)+'</td><td>'+badge(m.proto+p)+'</td><td class="ms">'+m.ms+'</td></tr>'});
+  d.cvs_dead.forEach(m=>{h+='<tr class="dead"><td><span class="status-dot dot-dead">●</span></td><td>'+esc(m.host)+'</td><td>'+esc(m.country)+'</td><td></td><td></td></tr>'});
+  h+='</tbody></table></div></div>';
+  document.getElementById('content').innerHTML=h;
+}
 go();
 </script></body></html>"""
 
