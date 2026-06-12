@@ -47,8 +47,8 @@ relayd:
 	doas cp ${REPO}/mirrors/relayd.conf /etc/relayd.conf
 	doas rcctl enable relayd
 	doas rcctl restart relayd
-	doas crontab -l 2>/dev/null | grep -qF 'acme-client openbsd-kiku' || \
-		(doas crontab -l 2>/dev/null; echo "${CRON_ENTRY}") | doas crontab -
+	doas crontab -l 2>/dev/null | grep -qF 'rcctl reload relayd' || \
+		(doas crontab -l 2>/dev/null | grep -v 'acme-client openbsd-kiku'; echo "${CRON_ENTRY}") | doas crontab -
 
 # --- websvc: unified aiohttp service (mirrors + mails) ---
 
