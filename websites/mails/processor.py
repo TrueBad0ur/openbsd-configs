@@ -228,6 +228,12 @@ def main():
 
     lst = extract_list(msg)
     if not lst:
+        sys.stderr.write(
+            f"processor: unrecognized list: from={msg.get('From','')} "
+            f"list-id={msg.get('List-Id','')} "
+            f"delivered-to={msg.get('Delivered-To','')} "
+            f"subject={msg.get('Subject','')}\n"
+        )
         conn.close()
         sys.exit(0)
 
