@@ -4,6 +4,7 @@ let _activeTab = 'feed';
 let _activeFilters = new Set();
 let _filterOpen = false;
 let _returnTab = 'feed';
+let _showBack = false;
 
 function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
@@ -72,22 +73,29 @@ function toggleFilterDropdown(e) {
 function renderFilters() {
   const el = document.getElementById('filters');
   if (!_data) { el.innerHTML = ''; return; }
-  const isAll = _activeFilters.size === 0;
-  const label = isAll ? 'All lists'
-    : _activeFilters.size === 1 ? [..._activeFilters][0].replace('openbsd-', '')
-    : _activeFilters.size + ' lists';
-  const options = ['all', ..._data.lists].map(l => {
-    const checked = l === 'all' ? isAll : _activeFilters.has(l);
-    const display = l === 'all' ? 'All' : esc(l.replace('openbsd-', ''));
-    return '<div class="filter-option' + (checked ? ' checked' : '') + '" onclick="toggleFilter(\'' + l + '\')">'
-      + '<span class="filter-check">' + (checked ? '&#10003;' : '') + '</span>'
-      + display + '</div>';
-  }).join('');
-  el.innerHTML = '<div class="filter-select">'
-    + '<button class="filter-trigger" onclick="toggleFilterDropdown(event)">'
-    + esc(label) + '<span class="filter-arrow">' + (_filterOpen ? '&#9652;' : '&#9662;') + '</span></button>'
-    + '<div class="filter-dropdown' + (_filterOpen ? ' open' : '') + '">'
-    + options + '</div></div>';
+  let left = '';
+  if (!_showBack) {
+    const isAll = _activeFilters.size === 0;
+    const label = isAll ? 'All lists'
+      : _activeFilters.size === 1 ? [..._activeFilters][0].replace('openbsd-', '')
+      : _activeFilters.size + ' lists';
+    const options = ['all', ..._data.lists].map(l => {
+      const checked = l === 'all' ? isAll : _activeFilters.has(l);
+      const display = l === 'all' ? 'All' : esc(l.replace('openbsd-', ''));
+      return '<div class="filter-option' + (checked ? ' checked' : '') + '" onclick="toggleFilter(\'' + l + '\'); event.stopPropagation()">'
+        + '<span class="filter-check">' + (checked ? '&#10003;' : '') + '</span>'
+        + display + '</div>';
+    }).join('');
+    left = '<div class="filter-select">'
+      + '<button class="filter-trigger" onclick="toggleFilterDropdown(event)">'
+      + esc(label) + '<span class="filter-arrow">' + (_filterOpen ? '&#9652;' : '&#9662;') + '</span></button>'
+      + '<div class="filter-dropdown' + (_filterOpen ? ' open' : '') + '">'
+      + options + '</div></div>';
+  }
+  const right = _showBack
+    ? '<button class="back-btn" onclick="showList()">&larr; Back</button>'
+    : '';
+  el.innerHTML = '<div class="nav-row">' + left + right + '</div>';
 }
 
 function renderCurrentTab() {
@@ -155,6 +163,7 @@ function toggleRaw(btn, id, showRaw) {
 
 async function openThread(threadId, push = true) {
   if (push) { _returnTab = _activeTab; pushState({ thread: String(threadId) }); }
+  _showBack = true; renderFilters();
   const el = document.getElementById('content');
   el.innerHTML = '<p class="spinner">loading thread...</p>';
   try {
@@ -165,10 +174,6 @@ async function openThread(threadId, push = true) {
     const msgs = thread.messages;
     const subject = thread.subject || (msgs.length ? msgs[0].subject : '');
     let html = '<div class="thread-view">'
-      + '<div class="msg-detail-header">'
-      + '<button class="back-btn" onclick="showList()">&larr; Back</button>'
-      + '<button class="share-btn" onclick="copyLink()" title="Copy shareable link">&#128279; Copy link</button>'
-      + '</div>'
       + '<h2 class="thread-subject">' + esc(subject) + '</h2>'
       + '<p class="subtitle">' + msgs.length + ' messages</p>';
     msgs.forEach((msg) => {
@@ -194,6 +199,7 @@ async function openThread(threadId, push = true) {
 
 async function openMessage(msgId, push = true) {
   if (push) pushState({ msg: String(msgId) });
+  _showBack = true; renderFilters();
   const el = document.getElementById('content');
   el.innerHTML = '<p class="spinner">loading message...</p>';
   try {
@@ -202,10 +208,6 @@ async function openMessage(msgId, push = true) {
     const msg = await r.json();
     if (msg.error) throw new Error(msg.error);
     el.innerHTML = '<div class="msg-detail">'
-      + '<div class="msg-detail-header">'
-      + '<button class="back-btn" onclick="showList()">&larr; Back</button>'
-      + '<button class="share-btn" onclick="copyLink()" title="Copy shareable link">&#128279; Copy link</button>'
-      + '</div>'
       + '<div class="msg-detail-meta">'
       + '<div class="msg-meta-row"><span class="msg-meta-label">From</span><span class="msg-meta-val">' + esc(msg.author) + '</span></div>'
       + '<div class="msg-meta-row"><span class="msg-meta-label">Date</span><span class="msg-meta-val">' + esc(msg.date) + '</span></div>'
@@ -220,11 +222,8 @@ async function openMessage(msgId, push = true) {
 
 function showList(push = true) {
   if (push) pushState(null);
+  _showBack = false;
   if (_data) { render(_data); switchTab(_returnTab); }
-}
-
-function copyLink() {
-  navigator.clipboard.writeText(location.href).catch(() => {});
 }
 
 // --- List views ---

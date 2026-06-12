@@ -96,10 +96,16 @@ h2 {
 .section { display: none; }
 .section.active { display: block; }
 
-/* Filters */
+/* Filters / nav */
 
 .filter-row {
   margin-bottom: 16px;
+}
+
+.nav-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 }
 
 .filter-select { position: relative; display: inline-block; }
@@ -258,13 +264,6 @@ h2 {
 .msg-detail, .thread-view { animation: fadeIn .15s ease; }
 @keyframes fadeIn { from { opacity: 0; transform: translateY(3px); } to { opacity: 1; transform: none; } }
 
-.msg-detail-header {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin-bottom: 20px;
-}
-
 .back-btn {
   font-size: 12px;
   padding: 5px 14px;
@@ -278,17 +277,6 @@ h2 {
   letter-spacing: 0.5px;
 }
 .back-btn:hover { border-color: var(--accent); color: var(--accent); }
-
-.share-btn {
-  font-size: 12px;
-  padding: 5px 14px;
-  border: 1px solid var(--border);
-  color: var(--text3);
-  background: transparent;
-  cursor: pointer;
-  transition: all .15s;
-}
-.share-btn:hover { border-color: var(--border2); color: var(--text2); }
 
 .msg-detail-meta {
   border: 1px solid var(--border);
