@@ -257,6 +257,40 @@
   .d5 { animation-delay: 0.6s; }
   .d6 { animation-delay: 0.75s; }
   .d7 { animation-delay: 0.9s; }
+  .d8 { animation-delay: 1.05s; }
+  .d9 { animation-delay: 1.2s; }
+
+  .man-entry {
+    display: flex;
+    align-items: baseline;
+    gap: 0;
+    margin-bottom: 10px;
+    font-size: 14px;
+  }
+
+  .man-name {
+    color: var(--green);
+    text-decoration: none;
+    min-width: 120px;
+    transition: color 0.15s;
+  }
+
+  .man-name:hover {
+    color: #fff;
+    text-shadow: 0 0 8px var(--green);
+  }
+
+  .man-section {
+    color: #2a6e3a;
+    font-size: 12px;
+    margin-right: 16px;
+  }
+
+  .man-desc {
+    color: #555;
+    font-size: 13px;
+    letter-spacing: 0.5px;
+  }
 </style>
 </head>
 <body>
@@ -276,7 +310,7 @@
   </div>
   <div class="output-block d2">
     <div class="big-name">truebad0ur</div>
-    <div class="tagline">devsecops · ex-dfir · openbsd enthusiast</div>
+    <div class="tagline">devsecops · appsec · ex-dfir</div>
   </div>
 
   <hr class="divider">
@@ -289,8 +323,16 @@
     <div class="label">currently</div>
     <div class="tag-row">
       <span class="tag">devsecops</span>
-      <span class="tag">infrastructure</span>
-      <span class="tag">security engineering</span>
+      <span class="tag">appsec</span>
+      <span class="tag">k8s security</span>
+      <span class="tag">llm security</span>
+    </div>
+    <br>
+    <div class="label">certs</div>
+    <div class="tag-row">
+      <span class="tag">CKA</span>
+      <span class="tag">CKS</span>
+      <span class="tag">CCSE</span>
     </div>
     <br>
     <div class="label">previously</div>
@@ -305,17 +347,36 @@
 
   <div class="prompt-line d5">
     <span class="prompt">truebad0ur@openbsd:~$</span>
-    <span class="cmd">ls -1 links/</span>
+    <span class="cmd">ls openbsd-amsterdam/</span>
   </div>
   <div class="output-block d6">
+    <div class="label">hosted on openbsd.amsterdam · オープンビーエスディー.きく.コム</div>
+    <br>
+    <div class="man-entry">
+      <a class="man-name" href="/mirrors">mirrors</a>
+      <span class="man-section">(1)</span>
+      <span class="man-desc">openbsd cvs &amp; mirror latency status</span>
+    </div>
+    <div class="man-entry">
+      <a class="man-name" href="/mails">mails</a>
+      <span class="man-section">(1)</span>
+      <span class="man-desc">openbsd mailing lists reader — tech · ports · misc · announce</span>
+    </div>
+  </div>
+
+  <hr class="divider">
+
+  <div class="prompt-line d7">
+    <span class="prompt">truebad0ur@openbsd:~$</span>
+    <span class="cmd">ls -1 links/</span>
+  </div>
+  <div class="output-block d8">
     <div class="section-grid">
       <div>
         <div class="label">stack</div>
         <div class="tag-row" style="flex-direction:column; gap:6px;">
-          <span class="tag" style="width:fit-content">openbsd</span>
-          <span class="tag" style="width:fit-content">pf · relayd · pledge</span>
-          <span class="tag" style="width:fit-content">kubernetes · terraform</span>
-          <span class="tag" style="width:fit-content">go · python · bash</span>
+          <span class="tag" style="width:fit-content">k8s</span>
+          <span class="tag" style="width:fit-content">nixos · openbsd</span>
         </div>
       </div>
       <div>
@@ -327,15 +388,7 @@
           </li>
           <li>
             <a href="https://xn--qckyd1c.xn--w8je.xn--tckwe/" target="_blank">ブログ.きく.コム</a>
-            <div class="link-desc">blog & articles</div>
-          </li>
-          <li>
-            <a href="/mirrors">openbsd cvs &amp; mirror status</a>
-            <div class="link-desc">live server check</div>
-          </li>
-          <li>
-            <a href="/mails">openbsd mailing lists</a>
-            <div class="link-desc">tech · ports · misc · announce</div>
+            <div class="link-desc">blog &amp; articles</div>
           </li>
           <li>
             <a href="https://github.com/TrueBad0ur" target="_blank">github.com/TrueBad0ur</a>
@@ -352,7 +405,7 @@
 
   <hr class="divider">
 
-  <div class="prompt-line d7">
+  <div class="prompt-line d9">
     <span class="prompt">truebad0ur@openbsd:~$</span>
     <span class="cursor"></span>
   </div>

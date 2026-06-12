@@ -89,6 +89,8 @@ unsubscribe tech lists@xn--dckjf5dtd7c1a8tzcde.xn--w8je.xn--tckwe
 ```
 websites/
 ├── Makefile                    # top-level deploy
+├── root/
+│   └── index.html              # main landing page
 ├── shared/
 │   ├── server.py               # unified aiohttp service (port 8080)
 │   └── rc.d/websvc             # rc.d daemon script (_websvc user)
@@ -97,7 +99,6 @@ websites/
 │   ├── relayd.conf             # TLS termination
 │   ├── acme-client.conf        # Let's Encrypt
 │   ├── anubis.env              # PoW config
-│   ├── index.html              # main landing page
 │   ├── mirrors-svc/mirrors.py  # mirror checker
 │   └── ddos_defence/
 │       ├── pf.conf             # firewall rules
@@ -125,23 +126,6 @@ websites/
 |------|---------|
 | `_websvc` | runs websvc (aiohttp), reads DB read-only |
 | `_mailproc` | runs processor.py via smtpd MDA, writes to DB |
-
-## smtpd deployment
-
-`smtpd.conf` is not yet in the Makefile — deploy manually:
-
-```sh
-doas cp mails/smtpd.conf /etc/mail/smtpd.conf
-doas smtpd -n   # verify config
-doas rcctl restart smtpd
-```
-
-Virtual catch-all for the domain routes all incoming mail to `_mailproc`:
-
-```
-table virtuals { "@xn--dckjf5dtd7c1a8tzcde.xn--w8je.xn--tckwe" = "_mailproc" }
-action "lists_mda" mda "/home/scripts/mailproc/processor.py" user _mailproc virtual <virtuals>
-```
 
 ## pf whitelist
 

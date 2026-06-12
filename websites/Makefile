@@ -61,7 +61,7 @@ services:
 	doas cp ${REPO}/mirrors/mirrors-svc/mirrors.py      ${SVC_DIR}/mirrors.py
 	doas cp ${REPO}/mails/mail.py                       ${SVC_DIR}/mail.py
 	doas sh -c 'cp ${REPO}/mails/assets/* ${SVC_DIR}/assets/'
-	doas cp ${REPO}/mirrors/index.html                  /var/www/htdocs/index.html
+	doas cp ${REPO}/root/index.html                     /var/www/htdocs/index.html
 	doas chown -R root:_websvc ${SVC_DIR}
 	doas chmod -R 750 ${SVC_DIR}
 	doas cp ${REPO}/shared/rc.d/websvc /etc/rc.d/websvc
