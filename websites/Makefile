@@ -115,6 +115,8 @@ ddos:
 # --- Update code only (no user creation, no cert) ---
 
 update: services
+	doas cp ${REPO}/mails/processor.py ${MAILPROC_DIR}/processor.py
+	doas chmod 755 ${MAILPROC_DIR}/processor.py
 	@echo "==> updated"
 
 # --- Clean ---
