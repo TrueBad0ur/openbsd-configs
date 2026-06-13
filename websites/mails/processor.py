@@ -1,9 +1,4 @@
 #!/usr/bin/env python3
-"""
-Mail processor: reads raw email from stdin (called by smtpd MDA),
-parses it and inserts into SQLite database.
-"""
-
 import email
 import email.header
 import email.utils
@@ -14,82 +9,73 @@ from datetime import timezone
 
 DB_PATH = "/var/db/mails/mails.db"
 
-# Maps substrings found in List-Id / headers → canonical stored name
 LIST_MAP = {
-    "openbsd-tech":  "openbsd-tech",
-    "openbsd-misc":  "openbsd-misc",
-    "openbsd-ports": "openbsd-ports",
-    "openbsd-cvs":   "openbsd-cvs",
-    "openbsd-announce":          "openbsd-announce",
-    "openbsd-security-announce": "openbsd-security-announce",
-    "openbsd-www":   "openbsd-www",
-    # OpenBSD list server uses short names in List-Id
-    "<tech.openbsd.org>":     "openbsd-tech",
-    "<misc.openbsd.org>":     "openbsd-misc",
-    "<ports.openbsd.org>":    "openbsd-ports",
-    "<cvs.openbsd.org>":      "openbsd-cvs",
-    "<announce.openbsd.org>": "openbsd-announce",
-    "<www.openbsd.org>":      "openbsd-www",
-    "<bugs.openbsd.org>":     "openbsd-bugs",
-    "<pf.openbsd.org>":       "openbsd-pf",
-    "<security-announce.openbsd.org>": "openbsd-security-announce",
-    "<newbies.openbsd.org>":  "openbsd-newbies",
-    "<mirrors.openbsd.org>":  "openbsd-mirrors",
-    "<advocacy.openbsd.org>": "openbsd-advocacy",
-    "<mobile.openbsd.org>":   "openbsd-mobile",
-    "<arm.openbsd.org>":      "openbsd-arm",
-    "<alpha.openbsd.org>":    "openbsd-alpha",
-    "<sparc.openbsd.org>":    "openbsd-sparc",
-    "<ppc.openbsd.org>":      "openbsd-ppc",
-    "<hppa.openbsd.org>":     "openbsd-hppa",
-    "<smp.openbsd.org>":      "openbsd-smp",
-    "<x11.openbsd.org>":      "openbsd-x11",
-    "<ipv6.openbsd.org>":     "openbsd-ipv6",
-    "<mac68k.openbsd.org>":   "openbsd-mac68k",
-    "<m88k.openbsd.org>":     "openbsd-m88k",
-    "<vax.openbsd.org>":      "openbsd-vax",
-    "<sgi.openbsd.org>":      "openbsd-sgi",
-    "<elf.openbsd.org>":      "openbsd-elf",
-    "tech@openbsd.org":     "openbsd-tech",
-    "misc@openbsd.org":     "openbsd-misc",
-    "ports@openbsd.org":    "openbsd-ports",
-    "cvs@openbsd.org":      "openbsd-cvs",
-    "announce@openbsd.org": "openbsd-announce",
-    "www@openbsd.org":      "openbsd-www",
-    "bugs@openbsd.org":     "openbsd-bugs",
-    "pf@openbsd.org":       "openbsd-pf",
-    "security-announce@openbsd.org": "openbsd-security-announce",
-    "newbies@openbsd.org":  "openbsd-newbies",
-    "mirrors@openbsd.org":  "openbsd-mirrors",
-    "advocacy@openbsd.org": "openbsd-advocacy",
-    "mobile@openbsd.org":   "openbsd-mobile",
-    "arm@openbsd.org":      "openbsd-arm",
-    "alpha@openbsd.org":    "openbsd-alpha",
-    "sparc@openbsd.org":    "openbsd-sparc",
-    "ppc@openbsd.org":      "openbsd-ppc",
-    "hppa@openbsd.org":     "openbsd-hppa",
-    "smp@openbsd.org":      "openbsd-smp",
-    "x11@openbsd.org":      "openbsd-x11",
-    "ipv6@openbsd.org":     "openbsd-ipv6",
-    "mac68k@openbsd.org":   "openbsd-mac68k",
-    "m88k@openbsd.org":     "openbsd-m88k",
-    "vax@openbsd.org":      "openbsd-vax",
-    "sgi@openbsd.org":      "openbsd-sgi",
-    "elf@openbsd.org":      "openbsd-elf",
-    "<libressl.openbsd.org>":          "openbsd-libressl",
-    "<security.openbsd.org>":          "openbsd-security",
-    "<libressl-security.openbsd.org>": "openbsd-libressl-security",
-    "<opensmtpd-security.openbsd.org>":"openbsd-opensmtpd-security",
-    "<mirrors-announce.openbsd.org>":  "openbsd-mirrors-announce",
-    "<mirrors-discuss.openbsd.org>":   "openbsd-mirrors-discuss",
-    "<source-changes.openbsd.org>":    "openbsd-source-changes",
-    "libressl@openbsd.org":            "openbsd-libressl",
-    "security@openbsd.org":            "openbsd-security",
-    "libressl-security@openbsd.org":   "openbsd-libressl-security",
-    "opensmtpd-security@openbsd.org":  "openbsd-opensmtpd-security",
-    "mirrors-announce@openbsd.org":    "openbsd-mirrors-announce",
-    "mirrors-discuss@openbsd.org":     "openbsd-mirrors-discuss",
-    "source-changes@openbsd.org":      "openbsd-source-changes",
+    "<tech.openbsd.org>":                 "openbsd-tech",
+    "<misc.openbsd.org>":                 "openbsd-misc",
+    "<ports.openbsd.org>":                "openbsd-ports",
+    "<cvs.openbsd.org>":                  "openbsd-cvs",
+    "<announce.openbsd.org>":             "openbsd-announce",
+    "<www.openbsd.org>":                  "openbsd-www",
+    "<bugs.openbsd.org>":                 "openbsd-bugs",
+    "<pf.openbsd.org>":                   "openbsd-pf",
+    "<security-announce.openbsd.org>":    "openbsd-security-announce",
+    "<newbies.openbsd.org>":              "openbsd-newbies",
+    "<mirrors.openbsd.org>":              "openbsd-mirrors",
+    "<advocacy.openbsd.org>":             "openbsd-advocacy",
+    "<mobile.openbsd.org>":               "openbsd-mobile",
+    "<arm.openbsd.org>":                  "openbsd-arm",
+    "<alpha.openbsd.org>":                "openbsd-alpha",
+    "<sparc.openbsd.org>":                "openbsd-sparc",
+    "<ppc.openbsd.org>":                  "openbsd-ppc",
+    "<hppa.openbsd.org>":                 "openbsd-hppa",
+    "<smp.openbsd.org>":                  "openbsd-smp",
+    "<x11.openbsd.org>":                  "openbsd-x11",
+    "<ipv6.openbsd.org>":                 "openbsd-ipv6",
+    "<mac68k.openbsd.org>":               "openbsd-mac68k",
+    "<m88k.openbsd.org>":                 "openbsd-m88k",
+    "<vax.openbsd.org>":                  "openbsd-vax",
+    "<sgi.openbsd.org>":                  "openbsd-sgi",
+    "<elf.openbsd.org>":                  "openbsd-elf",
+    "<libressl.openbsd.org>":             "openbsd-libressl",
+    "<security.openbsd.org>":             "openbsd-security",
+    "<libressl-security.openbsd.org>":    "openbsd-libressl-security",
+    "<opensmtpd-security.openbsd.org>":   "openbsd-opensmtpd-security",
+    "<mirrors-announce.openbsd.org>":     "openbsd-mirrors-announce",
+    "<mirrors-discuss.openbsd.org>":      "openbsd-mirrors-discuss",
+    "<source-changes.openbsd.org>":       "openbsd-source-changes",
+    "tech@openbsd.org":                   "openbsd-tech",
+    "misc@openbsd.org":                   "openbsd-misc",
+    "ports@openbsd.org":                  "openbsd-ports",
+    "cvs@openbsd.org":                    "openbsd-cvs",
+    "announce@openbsd.org":               "openbsd-announce",
+    "www@openbsd.org":                    "openbsd-www",
+    "bugs@openbsd.org":                   "openbsd-bugs",
+    "pf@openbsd.org":                     "openbsd-pf",
+    "security-announce@openbsd.org":      "openbsd-security-announce",
+    "newbies@openbsd.org":                "openbsd-newbies",
+    "mirrors@openbsd.org":                "openbsd-mirrors",
+    "advocacy@openbsd.org":               "openbsd-advocacy",
+    "mobile@openbsd.org":                 "openbsd-mobile",
+    "arm@openbsd.org":                    "openbsd-arm",
+    "alpha@openbsd.org":                  "openbsd-alpha",
+    "sparc@openbsd.org":                  "openbsd-sparc",
+    "ppc@openbsd.org":                    "openbsd-ppc",
+    "hppa@openbsd.org":                   "openbsd-hppa",
+    "smp@openbsd.org":                    "openbsd-smp",
+    "x11@openbsd.org":                    "openbsd-x11",
+    "ipv6@openbsd.org":                   "openbsd-ipv6",
+    "mac68k@openbsd.org":                 "openbsd-mac68k",
+    "m88k@openbsd.org":                   "openbsd-m88k",
+    "vax@openbsd.org":                    "openbsd-vax",
+    "sgi@openbsd.org":                    "openbsd-sgi",
+    "elf@openbsd.org":                    "openbsd-elf",
+    "libressl@openbsd.org":               "openbsd-libressl",
+    "security@openbsd.org":               "openbsd-security",
+    "libressl-security@openbsd.org":      "openbsd-libressl-security",
+    "opensmtpd-security@openbsd.org":     "openbsd-opensmtpd-security",
+    "mirrors-announce@openbsd.org":       "openbsd-mirrors-announce",
+    "mirrors-discuss@openbsd.org":        "openbsd-mirrors-discuss",
+    "source-changes@openbsd.org":         "openbsd-source-changes",
 }
 
 SCHEMA = """
@@ -126,9 +112,9 @@ def decode_header(value):
     return " ".join(result).strip()
 
 
-def extract_list(msg):
-    """Detect which OpenBSD list this message is from."""
-    headers_to_check = [
+def identify_list(msg):
+    """Return canonical list name, or raw List-Id value, or 'unknown'. Never returns None."""
+    headers = [
         msg.get("List-Id", ""),
         msg.get("Delivered-To", ""),
         msg.get("To", ""),
@@ -136,15 +122,16 @@ def extract_list(msg):
         msg.get("X-Mailing-List", ""),
         msg.get("X-BeenThere", ""),
     ]
-    combined = " ".join(headers_to_check).lower()
+    combined = " ".join(headers).lower()
     for pattern, canonical in LIST_MAP.items():
         if pattern.lower() in combined:
             return canonical
-    return None
+    # Not in LIST_MAP — store with raw List-Id so data is never lost
+    raw = msg.get("List-Id", "").strip()
+    return raw if raw else "unknown"
 
 
 def extract_body(msg):
-    """Extract plain text body, preferring text/plain."""
     if msg.is_multipart():
         for part in msg.walk():
             ct = part.get_content_type()
@@ -164,7 +151,6 @@ def extract_body(msg):
 
 
 def parse_date(date_str):
-    """Return (iso_string, unix_ts) or ('', 0)."""
     if not date_str:
         return "", 0
     try:
@@ -188,7 +174,7 @@ def insert(conn, row):
         """, row)
         conn.commit()
     except sqlite3.Error as e:
-        sys.stderr.write(f"db error: {e}\n")
+        sys.stderr.write(f"processor: db error: {e}\n")
 
 
 def harden():
@@ -196,9 +182,9 @@ def harden():
     if platform.system() != "OpenBSD":
         return
     libc = ctypes.CDLL(ctypes.util.find_library("c"), use_errno=True)
-    libc.unveil(DB_PATH.encode(),                   b"rwc")
-    libc.unveil(b"/var/db/mails/majordomo.log",     b"rwc")
-    libc.unveil(b"/var/db/mails",                   b"rwc")
+    libc.unveil(DB_PATH.encode(),               b"rwc")
+    libc.unveil(b"/var/db/mails/majordomo.log", b"rwc")
+    libc.unveil(b"/var/db/mails",               b"rwc")
     libc.unveil(None, None)
     libc.pledge(b"stdio rpath wpath cpath flock", None)
 
@@ -211,42 +197,41 @@ def main():
     raw = sys.stdin.buffer.read()
     msg = email.message_from_bytes(raw)
 
-    # Save majordomo confirmation emails to a separate file so we can act on them
+    # Majordomo confirmations go to a log file, not the messages DB
     from_hdr = msg.get("From", "") + msg.get("Return-Path", "")
     if "majordomo" in from_hdr.lower():
-        log_path = "/var/db/mails/majordomo.log"
         try:
-            with open(log_path, "a") as f:
+            with open("/var/db/mails/majordomo.log", "a") as f:
                 f.write(f"\n{'='*60}\n")
                 for h in ("From", "Return-Path", "Subject", "Date"):
-                    f.write(f"{h}: {msg.get(h,'')}\n")
+                    f.write(f"{h}: {msg.get(h, '')}\n")
                 f.write("\n" + extract_body(msg) + "\n")
         except Exception:
             pass
         conn.close()
         sys.exit(0)
 
-    lst = extract_list(msg)
-    if not lst:
-        sys.stderr.write(
-            f"processor: unrecognized list: from={msg.get('From','')} "
-            f"list-id={msg.get('List-Id','')} "
-            f"delivered-to={msg.get('Delivered-To','')} "
-            f"subject={msg.get('Subject','')}\n"
-        )
-        conn.close()
-        sys.exit(0)
-
+    # message_id is required for deduplication — skip only if truly absent
     message_id = decode_header(msg.get("Message-Id", "")).strip("<>")
     if not message_id:
         conn.close()
         sys.exit(0)
 
-    in_reply_to = decode_header(msg.get("In-Reply-To", "")).strip("<>") or None
-    refs_raw = decode_header(msg.get("References", ""))
-    refs = " ".join(r.strip("<>") for r in refs_raw.split()) if refs_raw else None
+    lst = identify_list(msg)
+    if lst not in LIST_MAP.values():
+        sys.stderr.write(
+            f"processor: unknown list {lst!r}: "
+            f"from={msg.get('From', '')} subject={msg.get('Subject', '')}\n"
+        )
 
-    subject = decode_header(msg.get("Subject", "(no subject)"))
+    raw_irt = decode_header(msg.get("In-Reply-To", ""))
+    irt_m = re.search(r'<([^>]+)>', raw_irt)
+    in_reply_to = (irt_m.group(1) if irt_m else raw_irt.strip()) or None
+
+    refs_raw = decode_header(msg.get("References", ""))
+    refs = " ".join(re.findall(r'<([^>]+)>', refs_raw)) or None
+
+    subject  = decode_header(msg.get("Subject", "(no subject)"))
     from_addr = decode_header(msg.get("From", ""))
     date_str, date_ts = parse_date(msg.get("Date", ""))
     body = extract_body(msg)
