@@ -178,15 +178,16 @@ def insert(conn, row):
 
 
 def harden():
-    import platform, ctypes, ctypes.util
+    import platform, ctypes, ctypes.util, sys
     if platform.system() != "OpenBSD":
         return
     libc = ctypes.CDLL(ctypes.util.find_library("c"), use_errno=True)
-    libc.unveil(DB_PATH.encode(),               b"rwc")
-    libc.unveil(b"/var/db/mails/majordomo.log", b"rwc")
-    libc.unveil(b"/var/db/mails",               b"rwc")
+    libc.unveil((sys.prefix + "/lib").encode(),  b"r")   # Python stdlib (.py modules loaded lazily)
+    libc.unveil(DB_PATH.encode(),                b"rwc")
+    libc.unveil(b"/var/db/mails/majordomo.log",  b"rwc")
+    libc.unveil(b"/var/db/mails",                b"rwc")
     libc.unveil(None, None)
-    libc.pledge(b"stdio rpath wpath cpath flock", None)
+    libc.pledge(b"stdio rpath wpath cpath flock chown", None)
 
 
 def main():
