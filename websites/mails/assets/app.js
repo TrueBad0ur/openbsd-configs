@@ -259,7 +259,7 @@ function renderThreads() {
       '<span class="badge">'+esc(l.replace('openbsd-',''))+'</span>').join(' ');
     return '<div class="thread-row" onclick="openThread('+t.thread_id+')">'
       + '<div class="thread-subj">'+esc(t.subject)+'</div>'
-      + '<div class="thread-meta"><span>'+t.count+' messages</span><span>'+esc(authors)+'</span>'+badges+'</div></div>';
+      + '<div class="thread-meta"><span>'+esc(toMSK(t.last_date))+'</span><span>'+t.count+' msg</span><span>'+esc(authors)+'</span>'+badges+'</div></div>';
   }).join('');
   document.getElementById('sec-threads').innerHTML =
     '<p class="subtitle">'+threads.length+' threads</p><div class="card">'+rows+'</div>';
