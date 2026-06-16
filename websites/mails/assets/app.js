@@ -8,6 +8,13 @@ let _showBack = false;
 
 function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
+function toMSK(dateStr) {
+  if (!dateStr) return dateStr;
+  const d = new Date(dateStr.replace(' ', 'T') + 'Z');
+  const msk = new Date(d.getTime() + 3 * 3600 * 1000);
+  return msk.toISOString().replace('T', ' ').slice(0, 16) + ' MSK';
+}
+
 function startTimer(lastUpdated, nextUpdate) {
   if (window._timer) clearInterval(window._timer);
   const updStr = new Date(lastUpdated*1000).toISOString().replace('T',' ').slice(0,16)+' UTC';
@@ -182,7 +189,7 @@ async function openThread(threadId, push = true) {
         + '<div class="conv-avatar">' + esc((msg.author || '?')[0].toUpperCase()) + '</div>'
         + '<div class="conv-meta">'
         + '<div class="conv-author">' + esc(msg.author) + '</div>'
-        + '<div class="conv-date">' + esc(msg.date) + '</div>'
+        + '<div class="conv-date">' + esc(toMSK(msg.date)) + '</div>'
         + '</div>'
         + '<span class="badge">' + esc(msg.list.replace('openbsd-','')) + '</span>'
         + '<button class="msg-link-btn" onclick="openMessage('+msg.id+'); event.stopPropagation();" title="Permalink">&#9900;</button>'
@@ -210,7 +217,7 @@ async function openMessage(msgId, push = true) {
     el.innerHTML = '<div class="msg-detail">'
       + '<div class="msg-detail-meta">'
       + '<div class="msg-meta-row"><span class="msg-meta-label">From</span><span class="msg-meta-val">' + esc(msg.author) + '</span></div>'
-      + '<div class="msg-meta-row"><span class="msg-meta-label">Date</span><span class="msg-meta-val">' + esc(msg.date) + '</span></div>'
+      + '<div class="msg-meta-row"><span class="msg-meta-label">Date</span><span class="msg-meta-val">' + esc(toMSK(msg.date)) + '</span></div>'
       + '<div class="msg-meta-row"><span class="msg-meta-label">Subject</span><span class="msg-meta-val">' + esc(msg.subject) + '</span></div>'
       + '</div>'
       + highlightBody(msg.body)
@@ -234,7 +241,7 @@ function renderFeed() {
   if (_activeFilters.size > 0) msgs = msgs.filter(m => _activeFilters.has(m.list));
   const rows = msgs.map(m => {
     return '<div class="msg-row" onclick="openMessage('+m.id+')">'
-      + '<span class="msg-date">'+esc(m.date)+'</span>'
+      + '<span class="msg-date">'+esc(toMSK(m.date))+'</span>'
       + '<span class="msg-subj">'+esc(m.subject)+'</span>'
       + '<span class="msg-author">'+esc(m.author)+'</span></div>';
   }).join('');
