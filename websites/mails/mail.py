@@ -95,7 +95,6 @@ def check():
             SELECT id, list, message_id, in_reply_to, subject, from_addr, date, date_ts
             FROM messages
             ORDER BY date_ts DESC
-            LIMIT 2000
         """).fetchall()
         conn.close()
     except Exception:
