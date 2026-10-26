@@ -4,7 +4,7 @@
 
 ```sh
 # checkout working copy
-cvs -qd anoncvs@anoncvs.eu.openbsd.org:/cvs checkout -rOPENBSD_7_9 -P src
+cvs -qd anoncvs@anoncvs.eu.openbsd.org:/cvs checkout -rOPENBSD_8_0 -P src
 
 # download raw repository (for viewvc)
 rsync -avz anoncvs.eu.openbsd.org::OpenBSD-cvs/src ./cvs-src

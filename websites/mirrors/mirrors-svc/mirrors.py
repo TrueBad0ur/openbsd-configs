@@ -164,11 +164,11 @@ def check():
 
     cvs_cmds = []
     if cvs_live:
-        cvs_cmds.append(fmt_cvs_cmd(cvs_live[0]) + " update -rOPENBSD_7_9 -Pd src ports")
+        cvs_cmds.append(fmt_cvs_cmd(cvs_live[0]) + " update -rOPENBSD_8_0 -Pd src ports")
     for alt_port in (443, 2022):
         alt = next((m for m in cvs_live if m.get("ssh_port") == alt_port), None)
         if alt:
-            cvs_cmds.append("port " + str(alt_port) + ": " + fmt_cvs_cmd(alt) + " update -rOPENBSD_7_9 -Pd src ports")
+            cvs_cmds.append("port " + str(alt_port) + ": " + fmt_cvs_cmd(alt) + " update -rOPENBSD_8_0 -Pd src ports")
 
     return {
         "binaries":    bin_grouped,

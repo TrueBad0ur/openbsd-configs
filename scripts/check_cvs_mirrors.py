@@ -203,11 +203,11 @@ def main():
     print("CVS (anoncvs)")
     if cvs_live:
         best = cvs_live[0]
-        print("  " + fmt_cvs_cmd(best) + " update -rOPENBSD_7_9 -Pd src ports")
+        print("  " + fmt_cvs_cmd(best) + " update -rOPENBSD_8_0 -Pd src ports")
     for alt_port in (443, 2022):
         alt = next((m for m in cvs_live if m.get("ssh_port") == alt_port), None)
         if alt:
-            print("  port " + str(alt_port) + ": " + fmt_cvs_cmd(alt) + " update -rOPENBSD_7_9 -Pd src ports")
+            print("  port " + str(alt_port) + ": " + fmt_cvs_cmd(alt) + " update -rOPENBSD_8_0 -Pd src ports")
     print("=" * 110)
     print("{:<4}  {:<16} {:<9} {:<45} {:>5}".format("", "COUNTRY", "PROTO", "HOST", "MS"))
     print("-" * 80)
