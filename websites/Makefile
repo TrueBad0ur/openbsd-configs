@@ -73,7 +73,7 @@ services:
 	doas rcctl stop mirrorssvc 2>/dev/null || true
 	doas rcctl enable websvc
 	doas rcctl stop websvc 2>/dev/null || true
-	doas fstat -n | awk '/8080/{print $$3}' | xargs -r doas kill 2>/dev/null || true
+	doas pkill -f '${SVC_DIR}/[s]erver.py' || true
 	sleep 1
 	doas rcctl start websvc
 	@echo "==> websvc started on 127.0.0.1:8080"
