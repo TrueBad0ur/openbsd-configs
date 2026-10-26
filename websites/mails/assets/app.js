@@ -1,5 +1,9 @@
 const API = '__API_PATH__';
+const PAGE = 100;
 let _data = null;
+let _feed = { items: [], total: 0, loading: false };
+let _threads = { items: [], total: 0, loading: false };
+let _scrollY = 0;
 let _activeTab = 'feed';
 let _activeFilters = new Set();
 let _filterOpen = false;
@@ -13,17 +17,6 @@ function toMSK(dateStr) {
   const d = new Date(dateStr.replace(' ', 'T') + 'Z');
   const msk = new Date(d.getTime() + 3 * 3600 * 1000);
   return msk.toISOString().replace('T', ' ').slice(0, 16) + ' MSK';
-}
-
-function startTimer(lastUpdated, nextUpdate) {
-  if (window._timer) clearInterval(window._timer);
-  const updStr = new Date(lastUpdated*1000).toISOString().replace('T',' ').slice(0,16)+' UTC';
-  window._timer = setInterval(() => {
-    const secs = Math.max(0, Math.round((nextUpdate*1000 - Date.now())/1000));
-    const m = Math.floor(secs/60), s = secs%60;
-    const el = document.getElementById('ts');
-    if (el) el.textContent = 'Updated '+updStr+'  ·  refresh in '+(secs>0 ? m+':'+String(s).padStart(2,'0') : 'updating...');
-  }, 1000);
 }
 
 // --- URL state ---
@@ -58,6 +51,7 @@ function switchTab(tab) {
   document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab === tab));
   document.querySelectorAll('.section').forEach(s => s.classList.toggle('active', s.id === 'sec-'+tab));
   renderFilters();
+  loadMore(tab);
 }
 
 function toggleFilter(list) {
@@ -68,6 +62,8 @@ function toggleFilter(list) {
     else _activeFilters.add(list);
   }
   renderFilters();
+  _feed = { items: [], total: 0, loading: false };
+  _threads = { items: [], total: 0, loading: false };
   renderCurrentTab();
 }
 
@@ -107,9 +103,56 @@ function renderFilters() {
 
 function renderCurrentTab() {
   renderFilters();
-  if (_activeTab === 'feed') renderFeed();
-  else if (_activeTab === 'threads') renderThreads();
-  else if (_activeTab === 'stats') renderStats();
+  document.getElementById('sec-feed').innerHTML = '';
+  document.getElementById('sec-threads').innerHTML = '';
+  loadMore(_activeTab);
+}
+
+// --- Paged data ---
+
+function listsParam() {
+  return _activeFilters.size ? '&lists=' + encodeURIComponent([..._activeFilters].join(',')) : '';
+}
+
+async function loadMore(kind) {
+  if (kind !== 'feed' && kind !== 'threads') return;
+  const st = kind === 'feed' ? _feed : _threads;
+  if (st.loading || (st.items.length && st.items.length >= st.total)) return;
+  st.loading = true;
+  const sec = document.getElementById('sec-' + kind);
+  const btn = sec.querySelector('.load-more');
+  if (btn) btn.textContent = 'loading...';
+  try {
+    const r = await fetch(API + '/' + kind + '?offset=' + st.items.length + '&limit=' + PAGE + listsParam());
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    const j = await r.json();
+    const first = st.items.length === 0;
+    st.total = j.total;
+    st.items = st.items.concat(j.items);
+    renderPage(kind, j.items, first);
+  } catch(e) {
+    sec.insertAdjacentHTML('beforeend', '<p class="spinner">error: ' + esc(e.message) + '</p>');
+  } finally {
+    st.loading = false;
+  }
+}
+
+function renderPage(kind, items, first) {
+  const st = kind === 'feed' ? _feed : _threads;
+  const sec = document.getElementById('sec-' + kind);
+  const rows = items.map(kind === 'feed' ? feedRow : threadRow).join('');
+  if (first) {
+    sec.innerHTML = '<p class="subtitle">' + st.total + (kind === 'feed' ? ' messages' : ' threads')
+      + '</p><div class="card">' + rows + '</div>';
+  } else {
+    sec.querySelector('.card').insertAdjacentHTML('beforeend', rows);
+  }
+  const old = sec.querySelector('.load-more');
+  if (old) old.remove();
+  if (st.items.length < st.total) {
+    sec.insertAdjacentHTML('beforeend', '<button class="load-more" onclick="loadMore(\'' + kind + '\')">Load more ('
+      + (st.total - st.items.length) + ' left)</button>');
+  }
 }
 
 // --- Body rendering ---
@@ -169,7 +212,7 @@ function toggleRaw(btn, id, showRaw) {
 // --- Navigation ---
 
 async function openThread(threadId, push = true) {
-  if (push) { _returnTab = _activeTab; pushState({ thread: String(threadId) }); }
+  if (push) { _scrollY = window.scrollY; _returnTab = _activeTab; pushState({ thread: String(threadId) }); }
   _showBack = true; renderFilters();
   const el = document.getElementById('content');
   el.innerHTML = '<p class="spinner">loading thread...</p>';
@@ -205,6 +248,7 @@ async function openThread(threadId, push = true) {
 }
 
 async function openMessage(msgId, push = true) {
+  if (push) { _scrollY = window.scrollY; }
   if (push) pushState({ msg: String(msgId) });
   _showBack = true; renderFilters();
   const el = document.getElementById('content');
@@ -230,39 +274,25 @@ async function openMessage(msgId, push = true) {
 function showList(push = true) {
   if (push) pushState(null);
   _showBack = false;
-  if (_data) { render(_data); switchTab(_returnTab); }
+  if (_data) { render(_data); switchTab(_returnTab); window.scrollTo(0, _scrollY); }
 }
 
 // --- List views ---
 
-function renderFeed() {
-  if (!_data) return;
-  let msgs = _data.messages;
-  if (_activeFilters.size > 0) msgs = msgs.filter(m => _activeFilters.has(m.list));
-  const rows = msgs.map(m => {
-    return '<div class="msg-row" onclick="openMessage('+m.id+')">'
-      + '<span class="msg-date">'+esc(toMSK(m.date))+'</span>'
-      + '<span class="msg-subj">'+esc(m.subject)+'</span>'
-      + '<span class="msg-author">'+esc(m.author)+'</span></div>';
-  }).join('');
-  document.getElementById('sec-feed').innerHTML =
-    '<p class="subtitle">'+msgs.length+' messages</p><div class="card">'+rows+'</div>';
+function feedRow(m) {
+  return '<div class="msg-row" onclick="openMessage('+m.id+')">'
+    + '<span class="msg-date">'+esc(toMSK(m.date))+'</span>'
+    + '<span class="msg-subj">'+esc(m.subject)+'</span>'
+    + '<span class="msg-author">'+esc(m.author)+'</span></div>';
 }
 
-function renderThreads() {
-  if (!_data) return;
-  let threads = _data.threads;
-  if (_activeFilters.size > 0) threads = threads.filter(t => t.lists && t.lists.some(l => _activeFilters.has(l)));
-  const rows = threads.map(t => {
-    const authors = (t.authors || []).join(', ');
-    const badges = (t.lists || []).map(l =>
-      '<span class="badge">'+esc(l.replace('openbsd-',''))+'</span>').join(' ');
-    return '<div class="thread-row" onclick="openThread('+t.thread_id+')">'
-      + '<div class="thread-subj">'+esc(t.subject)+'</div>'
-      + '<div class="thread-meta"><span>'+esc(toMSK(t.last_date))+'</span><span>'+t.count+' msg</span><span>'+esc(authors)+'</span>'+badges+'</div></div>';
-  }).join('');
-  document.getElementById('sec-threads').innerHTML =
-    '<p class="subtitle">'+threads.length+' threads</p><div class="card">'+rows+'</div>';
+function threadRow(t) {
+  const authors = (t.authors || []).join(', ');
+  const badges = (t.lists || []).map(l =>
+    '<span class="badge">'+esc(l.replace('openbsd-',''))+'</span>').join(' ');
+  return '<div class="thread-row" onclick="openThread('+t.thread_id+')">'
+    + '<div class="thread-subj">'+esc(t.subject)+'</div>'
+    + '<div class="thread-meta"><span>'+esc(toMSK(t.last_date))+'</span><span>'+t.count+' msg</span><span>'+esc(authors)+'</span>'+badges+'</div></div>';
 }
 
 function renderStats() {
@@ -271,7 +301,7 @@ function renderStats() {
   const mx = s.top_authors.length ? s.top_authors[0].count : 1;
   const cards = [
     '<div class="stat-card"><div class="stat-val">'+s.total+'</div><div class="stat-label">messages</div></div>',
-    '<div class="stat-card"><div class="stat-val">'+(_data.threads||[]).length+'</div><div class="stat-label">threads</div></div>',
+    '<div class="stat-card"><div class="stat-val">'+_data.total_threads+'</div><div class="stat-label">threads</div></div>',
     '<div class="stat-card"><div class="stat-val">'+s.top_authors.length+'</div><div class="stat-label">authors</div></div>',
     '<div class="stat-card"><div class="stat-val">'+(_data.lists||[]).length+'</div><div class="stat-label">lists</div></div>',
   ].join('');
@@ -296,24 +326,23 @@ function render(d) {
     + '<div id="sec-feed" class="section active"></div>'
     + '<div id="sec-threads" class="section"></div>'
     + '<div id="sec-stats" class="section"></div>';
-  renderFilters(); renderFeed(); renderThreads(); renderStats();
+  renderFilters(); renderStats();
+  if (_feed.items.length) renderPage('feed', _feed.items, true); else loadMore('feed');
+  if (_threads.items.length) renderPage('threads', _threads.items, true);
 }
 
 // --- Bootstrap ---
 
-let _nextFetch = null;
 async function fetchData() {
-  if (_nextFetch) clearTimeout(_nextFetch);
   try {
     const r = await fetch(API);
     if (r.status === 503) {
       document.getElementById('content').innerHTML = '<p class="spinner">fetching...</p>';
-      _nextFetch = setTimeout(fetchData, 3000);
+      setTimeout(fetchData, 3000);
       return;
     }
     const j = await r.json();
     _data = j.data;
-    startTimer(j.last_updated, j.next_update);
 
     // Handle direct URL load (shareable link)
     const params = readURLParams();
@@ -324,11 +353,8 @@ async function fetchData() {
     } else {
       render(_data);
     }
-
-    _nextFetch = setTimeout(fetchData, Math.max(5000, j.next_update * 1000 - Date.now() + 3000));
   } catch(e) {
     document.getElementById('content').innerHTML = '<p class="spinner">error: ' + e.message + '</p>';
-    _nextFetch = setTimeout(fetchData, 10000);
   }
 }
 

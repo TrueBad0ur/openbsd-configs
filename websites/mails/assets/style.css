@@ -391,3 +391,6 @@ h2 {
 }
 .conv-header:hover .msg-link-btn { opacity: 1; }
 .msg-link-btn:hover { color: var(--accent); }
+
+.load-more { display: block; width: 100%; margin: 16px 0; padding: 12px; background: var(--bg2); color: var(--text2); border: 1px solid var(--border); border-radius: 6px; font: inherit; font-size: 13px; cursor: pointer; }
+.load-more:hover { background: var(--bg3); color: var(--text); }

@@ -86,6 +86,72 @@ def make_api_handler(path):
 
 # === MAILS ===
 
+PAGE_DEFAULT, PAGE_MAX = 100, 200
+_filtered = {}  # (view, lists) -> (last_updated, items)
+
+
+def _revalidated(request, resp_etag):
+    return request.headers.get("If-None-Match") == resp_etag
+
+
+async def mails_meta(request):
+    s = state["/mails"]
+    if s["data"] is None:
+        return web.json_response({"status": "checking"}, status=503)
+    d = s["data"]
+    etag = 'W/"meta-%d"' % int(s["last_updated"] * 1000)
+    if _revalidated(request, etag):
+        return web.Response(status=304, headers={"ETag": etag, "Cache-Control": "no-cache"})
+    resp = web.json_response({
+        "last_updated": s["last_updated"],
+        "data": {"lists": d["lists"], "stats": d["stats"], "list_counts": d["list_counts"],
+                 "total_messages": len(d["messages"]), "total_threads": len(d["threads"])},
+    })
+    resp.headers.update({"ETag": etag, "Cache-Control": "no-cache"})
+    resp.enable_compression()
+    return resp
+
+
+async def mails_page_api(request):
+    s = state["/mails"]
+    if s["data"] is None:
+        return web.json_response({"status": "checking"}, status=503)
+    view = request.match_info["view"]
+    if view not in ("feed", "threads"):
+        raise web.HTTPNotFound()
+    try:
+        offset = max(0, int(request.query.get("offset", 0)))
+        limit = min(PAGE_MAX, max(1, int(request.query.get("limit", PAGE_DEFAULT))))
+    except ValueError:
+        raise web.HTTPBadRequest()
+    lists = tuple(sorted(l for l in request.query.get("lists", "").split(",") if l))
+    etag = 'W/"%s-%d-%s-%d-%d"' % (view, int(s["last_updated"] * 1000), ",".join(lists), offset, limit)
+    if _revalidated(request, etag):
+        return web.Response(status=304, headers={"ETag": etag, "Cache-Control": "no-cache"})
+
+    key = (view, lists)
+    hit = _filtered.get(key)
+    if hit and hit[0] == s["last_updated"]:
+        items = hit[1]
+    else:
+        src = s["data"]["messages" if view == "feed" else "threads"]
+        if lists:
+            wanted = set(lists)
+            if view == "feed":
+                src = [m for m in src if m["list"] in wanted]
+            else:
+                src = [t for t in src if wanted.intersection(t["lists"])]
+        items = src
+        if len(_filtered) > 64:
+            _filtered.clear()
+        _filtered[key] = (s["last_updated"], items)
+
+    resp = web.json_response({"total": len(items), "offset": offset, "items": items[offset:offset + limit]})
+    resp.headers.update({"ETag": etag, "Cache-Control": "no-cache"})
+    resp.enable_compression()
+    return resp
+
+
 def make_mails_page(title, api_path):
     async def handler(request):
         html = (ASSETS_DIR / "index.html").read_text().replace("__API_PATH__", api_path)
@@ -110,13 +176,21 @@ def make_mails_assets(api_path):
 async def mails_msg(request):
     data, err = await asyncio.get_event_loop().run_in_executor(
         None, mail_checker.fetch_body, None, request.match_info["id"])
-    return web.json_response(data if not err else {"error": err}, status=200 if not err else 404 if err == "not found" else 502)
+    resp = web.json_response(data if not err else {"error": err}, status=200 if not err else 404 if err == "not found" else 502)
+    if not err:
+        resp.headers["Cache-Control"] = "public, max-age=86400"
+        resp.enable_compression()
+    return resp
 
 
 async def mails_thread(request):
     data, err = await asyncio.get_event_loop().run_in_executor(
         None, mail_checker.fetch_thread, request.match_info["id"])
-    return web.json_response(data if not err else {"error": err}, status=200 if not err else 404 if err == "thread not found" else 502)
+    resp = web.json_response(data if not err else {"error": err}, status=200 if not err else 404 if err == "thread not found" else 502)
+    if not err:
+        resp.headers["Cache-Control"] = "public, max-age=60"
+        resp.enable_compression()
+    return resp
 
 
 # === MIRRORS ===
@@ -179,7 +253,8 @@ def make_app():
     # Mails
     app.router.add_get("/mails",             make_mails_page("OpenBSD Mailing Lists", "/mails/api"))
     app.router.add_get("/mails/",           make_mails_page("OpenBSD Mailing Lists", "/mails/api"))
-    app.router.add_get("/mails/api",        make_api_handler("/mails"))
+    app.router.add_get("/mails/api",        mails_meta)
+    app.router.add_get("/mails/api/{view}", mails_page_api)
     app.router.add_get("/mails/assets/{path:.*}", make_mails_assets("/mails/api"))
     app.router.add_get("/mails/msg/{id}",         mails_msg)
     app.router.add_get("/mails/thread/{id}",      mails_thread)

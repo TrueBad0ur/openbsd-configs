@@ -87,10 +87,17 @@ def _build_threads(messages):
     return result
 
 
+_cache = {"sig": None, "data": None}
+
+
 def check():
     """Entry point for checker_loop — returns metadata from DB (no bodies)."""
     try:
         conn = _conn()
+        sig = tuple(conn.execute("SELECT COUNT(*), MAX(id) FROM messages").fetchone())
+        if sig == _cache["sig"]:
+            conn.close()
+            return _cache["data"]
         rows = conn.execute("""
             SELECT id, list, message_id, in_reply_to, subject, from_addr, date, date_ts
             FROM messages
@@ -115,13 +122,15 @@ def check():
         "list_breakdown": [{"list": l, "count": c} for l, c in list_cnt.most_common()],
     }
 
-    return {
+    data = {
         "messages":   messages,
         "threads":    threads,
         "stats":      stats,
         "lists":      OPENBSD_LISTS,
         "list_counts": dict(list_cnt),
     }
+    _cache.update(sig=sig, data=data)
+    return data
 
 
 def fetch_body(_list, msg_id):
